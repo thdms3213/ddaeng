@@ -58,7 +58,7 @@ function trackNav(h){ if(navBack){ navBack=false; const i=NAV.lastIndexOf(h); if
   if(TABROOT.includes(h)){ NAV.length=0; NAV.push(h); return; }
   if(NAV[NAV.length-1]===h) return; if(NAV[NAV.length-1]==='aiwait') NAV.pop(); NAV.push(h); if(NAV.length>40) NAV.splice(0,NAV.length-40); }
 function goBack(){ const cur=(location.hash||'#home').slice(1); let t= NAV.length>1? NAV[NAV.length-2] : (PARENT[cur]||'home'); if(t===cur) return; navBack=true; location.hash=t; }
-function route(){ { const hh=(location.hash||'#home').slice(1); if(['home','explore','chats','mypage'].includes(hh)) C.playFilter=''; } let h=(location.hash||'#home').slice(1); if(!SCREENS.includes(h)) h='home'; trackNav(h);
+function route(){ if(typeof hideTiltHint==='function'&&(location.hash||'#home')!=='#record') hideTiltHint(); { const hh=(location.hash||'#home').slice(1); if(['home','explore','chats','mypage'].includes(hh)) C.playFilter=''; } let h=(location.hash||'#home').slice(1); if(!SCREENS.includes(h)) h='home'; trackNav(h);
   { const tc=document.querySelector('meta[name=theme-color]'); if(tc) tc.setAttribute('content',({home:'#4B50D9',record:'#4B50D9',onboard:'#5258EE'})[h]||'#FDFDFD'); }
   $$('.screen').forEach(s=>s.classList.toggle('on',s.id===h));
   const tbWasHidden=$('#tabbar').style.display==='none';
@@ -155,14 +155,16 @@ $('#chatBtn').addEventListener('click',()=>{ E.room=E.rooms.find(r=>r.id==='ice'
   hs.addEventListener('click',e=>{ if(moved){ e.stopPropagation(); e.preventDefault(); } },true); })();
 /* tab bar interaction: the Purple pill springs to the tapped tab, squashes on arrival, icon hops */
 /* tab pill: one animation per move (no CSS transition) so every tap looks the same */
-let pillX=null;
-function movePill(animate=true){ const on=document.querySelector('.tab.on'), pill=$('#tabPill'); if(!on||!pill||!on.offsetWidth) return; const x=on.offsetLeft+2; if(pillX===x) return; const from=pillX; pillX=x;
+let pillX=null, TBK=1;
+/* the tab bar is drawn at 344px in the design; on narrower phones every tab and the pill scale down together */
+function layoutTabs(){ const tb=$('#tabbar'); if(!tb||!tb.clientWidth) return; const k=Math.min(1,(tb.getBoundingClientRect().width-2)/342); if(Math.abs(k-TBK)<.001&&tb.dataset.lt) return; TBK=k; tb.dataset.lt=1; tb.querySelectorAll('.tab').forEach((t,i)=>{ t.style.left=((5+64*i)*k)+'px'; t.style.width=(76*k)+'px'; }); const p=$('#tabPill'); if(p) p.style.width=(72*k)+'px'; pillX=null; }
+function movePill(animate=true){ layoutTabs(); const on=document.querySelector('.tab.on'), pill=$('#tabPill'); if(!on||!pill||!on.offsetWidth) return; const x=on.offsetLeft+2*TBK; if(pillX===x) return; const from=pillX; pillX=x;
   pill.getAnimations().forEach(a=>a.cancel()); pill.style.transform=`translateX(${x}px)`; if(!animate||reduce||from===null) return; const dir=x>from?1:-1;
   pill.animate([{transform:`translateX(${from}px) scale(1,1)`},{transform:`translateX(${x+dir*5}px) scale(1.08,.92)`,offset:.68},{transform:`translateX(${x-dir*1}px) scale(.97,1.03)`,offset:.86},{transform:`translateX(${x}px) scale(1,1)`}],{duration:420,easing:'cubic-bezier(.33,.8,.4,1)'}); }
 function tabHop(t){}
 $$('.tab').forEach(t=>t.addEventListener('click',()=>{ buzz(8); const TABS={home:'home',meet:'meet',place:'explore',chat:'chats',my:'mypage'}; if(t.dataset.tab==='meet'&&!t.classList.contains('on')) C.playFilter=''; const scr=TABS[t.dataset.tab]; if(scr){ if(t.classList.contains('on')){ const sc=document.getElementById(scr); sc&&sc.scrollTo({top:0,behavior:'smooth'}); tabHop(t); return; } $$('.tab').forEach(x=>x.classList.toggle('on',x===t)); movePill(true); tabHop(t); setTimeout(()=>go(scr),60); return; }
   toast('다음 단계에서 연결돼요'); }));
-new ResizeObserver(()=>movePill(false)).observe($('#tabbar'));
+new ResizeObserver(()=>{ pillX=null; movePill(false); }).observe($('#tabbar'));
 // hero deco balls follow tilt / pointer (B1-01)
 function heroTilt(nx,ny){ [['#deco1',6],['#deco2',4],['#deco3',3]].forEach(([s,k])=>{ $(s).style.transform=`translate(${nx*k}px,${ny*k}px)`; }); }
 
@@ -199,9 +201,12 @@ $('#record').addEventListener('pointermove',e=>{ if(tiltOn||e.pointerType!=='mou
 function onOrient(ev){ const gx=(ev.gamma||0)/40, gy=(ev.beta||0)/40; engine.gravity.x=Math.max(-1.5,Math.min(1.5,gx))*1.2; engine.gravity.y=Math.max(-1.5,Math.min(1.5,gy))*1.2; }
 let lastShake=0; function onMotion(ev){ const a=ev.accelerationIncludingGravity||{}; const m=Math.hypot(a.x||0,a.y||0,a.z||0)/9.8; const now=performance.now(); if(m>2.2&&now-lastShake>1000){ lastShake=now; shake(); } }
 function shake(){ buzz([20,30,20]); bodies.forEach(b=>{ if(b!==focused) Body.setVelocity(b,{x:(Math.random()-.5)*14,y:-12-Math.random()*8}); }); }
-$('#tiltBtn').addEventListener('click',async()=>{ if(tiltOn){ shake(); return; } try{ if(typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission){ const r=await DeviceOrientationEvent.requestPermission(); if(r!=='granted'){ toast('기울기 권한이 필요해요',{error:true}); return; } } if(typeof DeviceMotionEvent!=='undefined'&&DeviceMotionEvent.requestPermission){ try{ await DeviceMotionEvent.requestPermission(); }catch(e){} } }catch(e){}
+/* "이거 누르세요" — a floating hint that points at the tilt button every time the board opens, until it is pressed */
+function showTiltHint(){ const h=$('#tiltHint'), t=$('#tiltBtn'); if(!h||!t||tiltOn||location.hash!=='#record') return; const rb=$('#record').getBoundingClientRect(), bb=t.getBoundingClientRect(); h.style.top=(bb.bottom-rb.top+12)+'px'; h.style.right=Math.max(8,rb.right-bb.right-2)+'px'; h.style.setProperty('--ax',(bb.width/2-6+2)+'px'); h.classList.add('on'); t.classList.add('hinting'); }
+function hideTiltHint(){ const h=$('#tiltHint'); if(h) h.classList.remove('on'); const t=$('#tiltBtn'); if(t) t.classList.remove('hinting'); }
+$('#tiltBtn').addEventListener('click',async()=>{ hideTiltHint(); if(tiltOn){ shake(); return; } try{ if(typeof DeviceOrientationEvent!=='undefined'&&DeviceOrientationEvent.requestPermission){ const r=await DeviceOrientationEvent.requestPermission(); if(r!=='granted'){ toast('기울기 권한이 필요해요',{error:true}); return; } } if(typeof DeviceMotionEvent!=='undefined'&&DeviceMotionEvent.requestPermission){ try{ await DeviceMotionEvent.requestPermission(); }catch(e){} } }catch(e){}
   tiltOn=true; window.addEventListener('deviceorientation',onOrient); window.addEventListener('devicemotion',onMotion); $('#tiltTxt').textContent='흔들기'; $('#tiltBtn').querySelector('.ms').textContent='vibration'; toast('폰을 기울여 공을 굴려보세요'); });
-function enterRecord(){ $('#recBig').textContent=RECORDS.length; $('#recLine').textContent=`이번 달 ${RECORDS.length}번 놀았어요.`; requestAnimationFrame(()=>{ sizeBoard(); fillBoard(); if(!running){ running=true; last=performance.now(); raf=requestAnimationFrame(loop); } }); }
+function enterRecord(){ setTimeout(showTiltHint,450); $('#recBig').textContent=RECORDS.length; $('#recLine').textContent=`이번 달 ${RECORDS.length}번 놀았어요.`; requestAnimationFrame(()=>{ sizeBoard(); fillBoard(); if(!running){ running=true; last=performance.now(); raf=requestAnimationFrame(loop); } }); }
 function leaveRecord(){ running=false; cancelAnimationFrame(raf); dropTimers.forEach(clearTimeout); if(focused){ Body.setStatic(focused,false); focused=null; } $('#bubble').classList.remove('on'); }
 new ResizeObserver(()=>{ if($('#record').classList.contains('on')) sizeBoard(); }).observe($('#device'));
 
@@ -534,7 +539,7 @@ function renderSettings(){ const s=document.getElementById('settings'); const ro
   s.innerHTML=topbar('설정')+`<div class="shead">알림 설정</div><div class="srow" style="cursor:default"><span><span class="t-body" style="display:block">푸시 알림</span><span class="t-cap c3">모임 일정과 변경 소식을 받아요</span></span><button class="sw${F.push?' on':''}" id="pushSw" role="switch" aria-checked="${F.push}" aria-label="푸시 알림"></button></div>
   <div class="gap8"></div><div class="shead">서비스 정보</div>${row('공지사항','openNotice')}${row('신고 및 차단 목록','openBlock')}${row('이용약관','openTerms')}${row('개인정보 처리방침','openPrivacy')}
   <div class="gap8"></div><div class="shead">계정 관리</div>${row('로그아웃','logout')}${row('회원 탈퇴','withdraw',true)}
-  <div class="gap8"></div><div class="srow" style="cursor:default"><span class="t-body">앱 버전</span><span class="t-fn c3">1.0.0</span></div><div style="height:calc(env(safe-area-inset-bottom,0px) + 34px)"></div>`;
+  <div class="gap8"></div><div class="srow" style="cursor:default"><span class="t-body">앱 버전</span><span class="t-fn c3">1.0.0 (빌드 13)</span></div><div style="height:calc(env(safe-area-inset-bottom,0px) + 34px)"></div>`;
   s.querySelector('#pushSw').addEventListener('click',e=>{ F.push=!F.push; e.currentTarget.classList.toggle('on',F.push); e.currentTarget.setAttribute('aria-checked',F.push); buzz(8); toast(F.push?'푸시 알림을 켰어요':'푸시 알림을 껐어요'); }); }
 ACT.logout=()=>dialog({title:'로그아웃할까요?',body:'언제든 다시 로그인할 수 있어요.',face:'06',color:'lime',buttons:[{label:'취소'},{label:'로그아웃',primary:true,onClick:()=>{ store.set('loggedIn',false); Object.assign(A,{nick:'',gender:null,photo:null,pick:-1,avatar:null}); go('login'); setTimeout(()=>toast('로그아웃했어요'),300); }}]});
 ACT.withdraw=()=>dialog({title:'정말 탈퇴할까요?',body:'놀이 기록과 복원 도감이 모두 사라지고\n되돌릴 수 없어요.',face:'12',color:'lime',buttons:[{label:'취소'},{label:'탈퇴하기',primary:true,onClick:()=>{ Object.assign(A,{nick:'',gender:null,photo:null,pick:-1,avatar:null}); store.set('onboarded',false); store.set('loggedIn',false); C.splashShort=null; go('splash'); }}]});
@@ -623,7 +628,7 @@ function renderOnboard(){ const s=document.getElementById('onboard'); const from
   let K=1;
   function fit(){ const dv=document.getElementById('device'); const pr=document.createElement('div'); pr.style.cssText='position:absolute;visibility:hidden;height:max(env(safe-area-inset-top,0px),20px)'; s.appendChild(pr); const st=pr.offsetHeight||20; pr.remove();
     const full=st+418, textH=Math.max(...pages.map(p=>p.querySelector('.ob-text').offsetHeight)), footH=s.querySelector('.ob-fixed').offsetHeight;
-    const hh=Math.max(280,Math.min(full,dv.clientHeight-textH-footH-16)); K=hh/full;
+    const hh=Math.max(280,Math.min(full,dv.clientHeight-textH-footH-16)); K=Math.min(hh/full,dv.clientWidth/393);
     pages.forEach(p=>{ p.querySelector('.ob-hero').style.height=hh+'px'; p.querySelector('.ob-art').style.top=(K*(st-62))+'px'; }); frame(); }
   window.__obFit=fit; if(!window.__obFitBound){ window.__obFitBound=true; window.addEventListener('resize',()=>{ if(window.__obFit&&document.getElementById('onboard').classList.contains('on')) window.__obFit(); }); }
   // continuous dots + parallax, all driven by one scroll position

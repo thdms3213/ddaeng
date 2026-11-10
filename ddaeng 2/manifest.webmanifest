@@ -8,7 +8,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FDFDFD",
-  "theme_color": "#4B50D9",
+  "theme_color": "#5258EE",
   "icons": [
     {
       "src": "assets/icons/icon-192.png",
@@ -27,6 +27,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }

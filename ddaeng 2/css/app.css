@@ -529,3 +529,18 @@ body{background:var(--outer);font-family:Pretendard Variable,Pretendard,"Apple S
 .opt2 .ck svg{opacity:0;transition:opacity .15s}
 .opt2.on .ck svg{opacity:1}
 
+/* ================= 반응형: 모든 폰 크기 ================= */
+/* bottom call-to-action stays visible while the content above it scrolls */
+.afoot{position:sticky;bottom:0;background:var(--bg-surface);z-index:3}
+.tabbar{width:min(344px,calc(100% - 16px))}
+/* 기울이기 안내: 둥둥 떠 있는 말풍선 + 버튼 주변에 퍼지는 링 */
+.tilthint{position:absolute;z-index:30;pointer-events:none;display:none}
+.tilthint.on{display:block;animation:thbob 1.1s ease-in-out infinite}
+.tilthint span{display:block;position:relative;padding:9px 16px;border-radius:999px;background:var(--lime-500);border:1px solid var(--grey-900);box-shadow:0 3px 0 var(--grey-900);font-size:14px;line-height:20px;font-weight:700;color:var(--grey-900);white-space:nowrap}
+.tilthint span::before{content:"";position:absolute;right:var(--ax,40px);top:-7px;width:12px;height:12px;background:var(--lime-500);border-left:1px solid var(--grey-900);border-top:1px solid var(--grey-900);transform:rotate(45deg)}
+@keyframes thbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.tilt.hinting{animation:thring 1.4s ease-out infinite}
+@keyframes thring{0%{box-shadow:0 0 0 0 rgba(197,246,86,.95)}100%{box-shadow:0 0 0 14px rgba(197,246,86,0)}}
+@media (prefers-reduced-motion:reduce){ .tilthint.on,.tilt.hinting{animation:none} }
+@media (max-height:700px){ .avatar-pick,.avatar-pick .c{width:124px;height:124px} .avatar-pick .c .ms{font-size:56px!important} }
+
