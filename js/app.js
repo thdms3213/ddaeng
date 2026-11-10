@@ -553,7 +553,7 @@ function renderSettings(){ const s=document.getElementById('settings'); const ro
   s.innerHTML=topbar('설정')+`<div class="shead">알림 설정</div><div class="srow" style="cursor:default"><span><span class="t-body" style="display:block">푸시 알림</span><span class="t-cap c3">모임 일정과 변경 소식을 받아요</span></span><button class="sw${F.push?' on':''}" id="pushSw" role="switch" aria-checked="${F.push}" aria-label="푸시 알림"></button></div>
   <div class="gap8"></div><div class="shead">서비스 정보</div>${row('공지사항','openNotice')}${row('신고 및 차단 목록','openBlock')}${row('이용약관','openTerms')}${row('개인정보 처리방침','openPrivacy')}
   <div class="gap8"></div><div class="shead">계정 관리</div>${row('로그아웃','logout')}${row('회원 탈퇴','withdraw',true)}
-  <div class="gap8"></div><div class="srow" id="verRow" style="cursor:default"><span class="t-body">앱 버전</span><span class="t-fn c3">1.0.0 (빌드 21)</span></div><div style="height:calc(env(safe-area-inset-bottom,0px) + 34px)"></div>`;
+  <div class="gap8"></div><div class="srow" id="verRow" style="cursor:default"><span class="t-body">앱 버전</span><span class="t-fn c3">1.0.0 (빌드 23)</span></div><div style="height:calc(env(safe-area-inset-bottom,0px) + 34px)"></div>`;
   s.querySelector('#pushSw').addEventListener('click',e=>{ F.push=!F.push; e.currentTarget.classList.toggle('on',F.push); e.currentTarget.setAttribute('aria-checked',F.push); buzz(8); toast(F.push?'푸시 알림을 켰어요':'푸시 알림을 껐어요'); }); }
 ACT.logout=()=>dialog({title:'로그아웃할까요?',body:'언제든 다시 로그인할 수 있어요.',face:'06',color:'lime',buttons:[{label:'취소'},{label:'로그아웃',primary:true,onClick:()=>{ store.set('loggedIn',false); Object.assign(A,{nick:'',gender:null,photo:null,pick:-1,avatar:null}); go('nick'); setTimeout(()=>toast('로그아웃했어요'),300); }}]});
 ACT.withdraw=()=>dialog({title:'정말 탈퇴할까요?',body:'놀이 기록과 복원 도감이 모두 사라지고\n되돌릴 수 없어요.',face:'12',color:'lime',buttons:[{label:'취소'},{label:'탈퇴하기',primary:true,onClick:()=>{ Object.assign(A,{nick:'',gender:null,photo:null,pick:-1,avatar:null}); store.set('onboarded',false); store.set('loggedIn',false); C.splashShort=null; go('splash'); }}]});
@@ -571,24 +571,26 @@ function splashRun(){ SPT.forEach(clearTimeout); SPT=[]; const s=document.getEle
   const SB=[0,1,2].map(i=>{ const b=document.createElement('div'); b.className='sb'; b.style.zIndex=3-i; b.style.transformOrigin='50% 100%'; const gd=document.createElement('div'); gd.className='gsh'; st.insertBefore(gd,st.firstChild); b._sh=gd; b.innerHTML=`<span class="bd"><svg viewBox="${LOGO_PARTS[i][0]}" aria-hidden="true">${LOGO_PARTS[i][1]}</svg></span>`; st.appendChild(b); b.dataset.i=i; return b; });
   const squash=(b,a=1)=>b.querySelector('.bd').animate([{transform:'scale(1,1)'},{transform:`scale(${1+.26*a},${1-.26*a})`,offset:.32},{transform:'scale(1,1)'}],{duration:150,easing:'cubic-bezier(.2,.7,.3,1)'});
   function hop(b,x0,y0,x1,hs,delay=0,both=false){
-    /* one continuous bounce timeline per ball. There is no pause on the ground: the velocity just reverses at each impact (like a rubber ball),
-       flight time follows the physics (∝ √height), the ball stretches with its speed, and one quick squash happens right AFTER each impact. */
-    const K=42, seg=[]; let tc=0; hs.forEach((h,i)=>{ const d=K*Math.sqrt(h+(i===0?Math.abs(Math.min(0,y0))*.5:0)); seg.push({t0:tc,t1:tc+d,h,i}); tc+=d; });
-    const TAIL=130, T=tc+TAIL, imp=seg.map(q=>q.t1), kf=[], sk=[], step=10, n=Math.ceil(T/step);
-    for(let k=0;k<=n;k++){ const t=Math.min(T,k*step), g=seg.find(q=>t<=q.t1); let y=0, spd=0;
+    /* one continuous bounce timeline per ball. No pause on the ground: the velocity just reverses at each impact (like a rubber ball),
+       flight time follows the physics (∝ √height), the ball stretches with its speed, and one quick squash follows each impact.
+       A ball that starts from rest first crouches (a short squash that builds up) and then springs off. */
+    const K=68, rest=y0>=0, LEAD=rest?100:0, seg=[]; let tc=LEAD; hs.forEach((h,i)=>{ const d=K*Math.sqrt(h+(i===0?Math.abs(Math.min(0,y0))*.5:0)); seg.push({t0:tc,t1:tc+d,h,i}); tc+=d; });
+    const TAIL=150, T=tc+TAIL, kf=[], sk=[], step=10, n=Math.ceil(T/step);
+    const imp=[]; if(rest) imp.push([LEAD,.55]); seg.forEach(q=>imp.push([q.t1,Math.min(1,.35+Math.sqrt(hs[q.i]/150)*.65)]));
+    for(let k=0;k<=n;k++){ const t=Math.min(T,k*step), g=t<LEAD?null:seg.find(q=>t<=q.t1); let y=0, spd=0;
       if(g){ const u=(t-g.t0)/(g.t1-g.t0); y=(g.i===0?Math.min(0,y0):0)*(1-u)-4*g.h*u*(1-u); spd=Math.abs(1-2*u)*Math.sqrt(g.h/150); }
-      let c=0; imp.forEach((ti,i)=>{ const a=Math.min(1,.35+Math.sqrt(hs[i]/150)*.65), d=t-ti, s=d<0?16:38; c=Math.max(c,a*Math.exp(-(d/s)*(d/s))); });
-      const st=1+.12*Math.min(1,spd), sy=st*(1-.26*c), sx=(1+.26*c)/Math.sqrt(st), x=x0+(x1-x0)*Math.min(1,t/tc), o=t/T, sc=Math.max(.4,1-Math.max(0,-y)/260);
+      let c=0; imp.forEach(([ti,a])=>{ const d=t-ti, s=d<0?(rest&&ti===LEAD?40:16):38; c=Math.max(c,a*Math.exp(-(d/s)*(d/s))); });
+      const st=1+.12*Math.min(1,spd), sy=st*(1-.26*c), sx=(1+.26*c)/Math.sqrt(st), x=x0+(x1-x0)*Math.max(0,Math.min(1,(t-LEAD)/(tc-LEAD))), o=t/T, sc=Math.max(.4,1-Math.max(0,-y)/260);
       kf.push({transform:`translate(${x.toFixed(2)}px,${y.toFixed(2)}px) scale(${sx.toFixed(3)},${sy.toFixed(3)})`,offset:o});
       sk.push({transform:`translateX(${x.toFixed(2)}px) scaleX(${(sc*(1+.1*c)).toFixed(3)})`,opacity:sc,offset:o}); }
-    imp.forEach((ti,i)=>SPT.push(sT(()=>{ tone(380+(+b.dataset.i)*120+hs[i],.16,.08); buzz(6); },delay+ti)));
+    seg.forEach(q=>SPT.push(sT(()=>{ tone(380+(+b.dataset.i)*120+hs[q.i],.16,.08); buzz(6); },delay+q.t1)));
     const fill=both?'both':'forwards'; b.animate(kf,{duration:T,delay,easing:'linear',fill}); b._sh.animate(sk,{duration:T,delay,easing:'linear',fill}); b.dataset.x=x1; return delay+T; }
   if(reduce){ SB.forEach((b,i)=>{ b.style.opacity=1; b.style.transform=`translate(${[-51,0,51][i]}px,0)`; }); SPT.push(sT(()=>{ C.obFromSplash=true; go('onboard'); },900)); return; }
   window.__ms=0.76; /* first-run splash plays a touch quicker than the rest of the app */
   SB.forEach(b=>b.style.opacity=1);
   hop(SB[0],-260,-60,-92,[150,66],180,true); hop(SB[2],260,-60,92,[150,66],640,true);
-  SB[1].querySelector('.bd').animate([{transform:'scale(0)'},{transform:'scale(1.14)',offset:.6},{transform:'scale(1)'}],{duration:220,delay:1130,easing:'cubic-bezier(.2,.8,.3,1)',fill:'both'}); SB[1]._sh.animate([{opacity:0,transform:'scaleX(.2)'},{opacity:1,transform:'scaleX(1)'}],{duration:220,delay:1130,easing:'cubic-bezier(.2,.8,.3,1)',fill:'both'});
-  const e1=hop(SB[1],0,0,0,[170,76,30],1280);
+  SB[1].querySelector('.bd').animate([{transform:'scale(0)'},{transform:'scale(1.14)',offset:.6},{transform:'scale(1)'}],{duration:260,delay:1130,easing:'cubic-bezier(.2,.8,.3,1)',fill:'both'}); SB[1]._sh.animate([{opacity:0,transform:'scaleX(.2)'},{opacity:1,transform:'scaleX(1)'}],{duration:260,delay:1130,easing:'cubic-bezier(.2,.8,.3,1)',fill:'both'});
+  const e1=hop(SB[1],0,0,0,[130,60,26],1330);
   let w=e1+60, wend=0; SB.forEach((b,i)=>{ wend=Math.max(wend,hop(b,+b.dataset.x,0,+b.dataset.x,[46,20],w+i*115)); }); w=wend+70; /* waves settle completely (46→16→5) before the balls gather */
   hop(SB[0],-92,0,-51,[26],w); hop(SB[2],92,0,51,[26],w); hop(SB[1],0,0,0,[64,18],w-60);
   const start=w+420; SB.forEach(b=>b._sh.animate([{opacity:1},{opacity:0}],{duration:300,delay:start,fill:'forwards',easing:'ease-in'})); SB.forEach(b=>b.querySelector('.bd').animate([{transform:'scale(1)'},{transform:'scale(1.18,.8)'},{transform:'scale(.92,1.12)'},{transform:'scale(1)'}],{duration:360,delay:start,easing:'ease-out'}));
