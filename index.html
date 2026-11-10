@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#4B50D9">
+<meta name="theme-color" content="#5258EE">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="땡땡이">
@@ -11,8 +11,9 @@
 <meta name="description" content="어른이 되면서 잊어버린 놀이를 다시 찾아주는 동네 놀이 모임 앱, 땡땡이">
 <title>땡땡이</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
-<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg?v=4">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png?v=4">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png?v=4">
 <link rel="stylesheet" href="assets/fonts/pretendard.css">
 <link rel="stylesheet" href="assets/fonts/material-symbols.css">
 <link rel="stylesheet" href="css/app.css">
@@ -54,7 +55,7 @@
         </div>
       </section>
       <section>
-        <div class="sec-title"><div><div class="t-h3">나의 놀이 도감</div><div class="t-fn c2">12개 중 6개를 되찾았어요</div></div><button class="more">전체보기<span class="ms">arrow_circle_right</span></button></div>
+        <div class="sec-title"><div><div class="t-h3">나의 놀이 도감</div><div class="t-fn c2">12개 중 6개를 되찾았어요</div></div><button class="more" data-go="restore">전체보기<span class="ms">arrow_circle_right</span></button></div>
         <div class="card dogam"><div class="grid" id="dogam"></div>
           <div class="contrib"><div style="flex:1"><div class="t-cap c2">복원 기여도가 가장 높은 놀이</div><div class="t-fn-b">얼음땡 · 25회 중 3회 함께했어요</div></div><div class="t-h3" style="color:var(--purple-600)">12%</div></div>
         </div>
@@ -64,7 +65,7 @@
         <div class="hscroll" id="nextPlays"></div>
       </section>
       <section>
-        <div class="sec-title"><div><div class="t-h3">지금 함께 놀 사람</div><div class="t-fn c2">성수동 근처에서 모집 중이에요</div></div><button class="more" style="font-weight:400">더보기<span class="ms" style="font-size:18px">chevron_right</span></button></div>
+        <div class="sec-title"><div><div class="t-h3">지금 함께 놀 사람</div><div class="t-fn c2">성수동 근처에서 모집 중이에요</div></div><button class="more" style="font-weight:400" data-go="meet">더보기<span class="ms" style="font-size:18px">chevron_right</span></button></div>
         <div style="display:flex;flex-direction:column;gap:16px" id="meetings"></div>
       </section>
     </div>
@@ -83,6 +84,7 @@
       <div class="rec-sum"><div class="big"><span class="t-display" id="recBig">21</span><span>번</span></div><p id="recLine">이번 달 21번 놀았어요.</p></div>
     </div>
     <div class="bubble" id="bubble"></div>
+    <div class="tilthint" id="tiltHint" aria-hidden="true"><span>이거 누르세요!</span></div>
   </section>
 
   <section class="screen" id="meet" aria-label="놀이 모임 목록"></section>
@@ -106,6 +108,14 @@
   <section class="screen" id="aipick" aria-label="어린 시절 이미지 선택"></section>
   <section class="screen" id="aidone" aria-label="프로필 설정 완료"></section>
   <section class="screen" id="joined" aria-label="가입 완료"></section>
+  <section class="screen" id="notif" aria-label="알림"></section>
+  <section class="screen" id="notice" aria-label="공지사항"></section>
+  <section class="screen" id="noticeD" aria-label="공지 상세"></section>
+  <section class="screen" id="block" aria-label="신고 및 차단 목록"></section>
+  <section class="screen" id="terms" aria-label="이용약관"></section>
+  <section class="screen" id="privacy" aria-label="개인정보 처리방침"></section>
+  <section class="screen" id="reviews" aria-label="받은 평가"></section>
+  <section class="screen" id="myTown" aria-label="내 동네"></section>
   <section class="screen" id="splash" aria-label="스플래시"></section>
   <section class="screen" id="onboard" aria-label="온보딩"></section>
   <section class="screen" id="mypage" aria-label="마이"></section>
@@ -172,7 +182,13 @@
 <script src="js/app.js"></script>
 <script>
 /* offline support: cache the app after the first visit (needs https — GitHub Pages is https) */
-if('serviceWorker' in navigator && location.protocol.startsWith('http')){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  const had=!!navigator.serviceWorker.controller; let reloaded=false;
+  /* a new version takes over right away and the page reloads once, so updates show up on the very next open */
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(!had||reloaded) return; reloaded=true; location.reload(); });
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').then(r=>r.update()).catch(()=>{}));
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') navigator.serviceWorker.getRegistration().then(r=>r&&r.update()); });
+}
 </script>
 </body>
 </html>

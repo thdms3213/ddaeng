@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>땡땡이 새로고침</title>
+<style>body{margin:0;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:-apple-system,"Apple SD Gothic Neo",sans-serif;background:#FDFDFD;color:#1A1A1A;text-align:center;padding:24px}
+h1{font-size:22px;margin:0}p{margin:0;color:#666;font-size:15px;line-height:22px}a{display:inline-block;margin-top:8px;padding:14px 28px;border-radius:999px;background:#C5F656;border:1px solid #1A1A1A;box-shadow:0 5px 0 #1A1A1A;color:#1A1A1A;font-weight:700;text-decoration:none}</style></head>
+<body><h1 id="t">저장된 옛 버전을 지우는 중…</h1><p id="s">잠시만 기다려 주세요.</p><a id="go" href="./?r=0" hidden>땡땡이 열기</a>
+<script>
+(async()=>{ const out=[]; try{
+  if('serviceWorker' in navigator){ const rs=await navigator.serviceWorker.getRegistrations(); for(const r of rs){ await r.unregister(); } out.push('서비스 워커 '+rs.length+'개 해제'); }
+  if(window.caches){ const ks=await caches.keys(); for(const k of ks){ await caches.delete(k); } out.push('저장된 파일 '+ks.length+'묶음 삭제'); }
+ }catch(e){ out.push('일부만 지워졌어요'); }
+ document.getElementById('t').textContent='새 버전을 불러올게요'; document.getElementById('s').textContent=out.join(' · ')+' — 아래 버튼을 눌러 앱을 열어 주세요.';
+ const g=document.getElementById('go'); g.href='./?r='+Date.now(); g.hidden=false; setTimeout(()=>location.replace(g.href),1800);
+})();
+</script></body></html>
