@@ -563,3 +563,7 @@ body{background:var(--outer);font-family:Pretendard Variable,Pretendard,"Apple S
 /* phones: height follows the real screen */
 @media (max-width:519px){ .device{height:var(--appH,auto)} }
 .ios button,.ios button:focus,.ios button:focus-visible{outline:none}
+html{height:-webkit-fill-available}
+body{min-height:-webkit-fill-available}
+@media (max-width:519px){ .device{height:max(100%,var(--appH,0px))} }
+

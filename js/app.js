@@ -70,6 +70,7 @@ function route(){ if(typeof hideTiltHint==='function'&&(location.hash||'#home')!
   if(h!=='splash'){ SPT.forEach(clearTimeout); window.__ms=1; }
   closeSheet2&&sheet2.classList.contains('on')&&closeSheet2();
   if(h!=='done'){ const ce=document.getElementById('cel'); if(ce) ce.classList.remove('on'); }
+  { const on=document.querySelector('.screen.on'); if(on){ const bg=getComputedStyle(on).backgroundColor; const col=(bg&&bg!=='rgba(0, 0, 0, 0)')?bg:getComputedStyle(document.getElementById('device')).backgroundColor; document.documentElement.style.backgroundColor=col; document.body.style.backgroundColor=col; } }
   if(typeof ENTER!=='undefined'&&ENTER[h]){ ENTER[h](); const el=document.getElementById(h); if(el) el.scrollTop=0; }
   if(h==='record') enterRecord(); else leaveRecord();
   if(h==='home') enterHome(); }
@@ -545,10 +546,11 @@ function renderRestore(){ const s=document.getElementById('restore');
   s.innerHTML=topbar('나의 놀이 도감')+`<div style="padding:24px;display:flex;flex-direction:column;gap:8px"><div class="row" style="justify-content:space-between"><span class="t-head">6개의 놀이를 다시 만났어요</span><span class="t-fn-b" style="color:var(--purple-600)">6 / 12</span></div><div class="prog" style="background:#EBEBEB"><i></i></div></div><div style="padding:0 24px 24px"><div class="dg3">${dogamItems(DOGAM12)}</div></div><div style="height:calc(env(safe-area-inset-bottom,0px) + 34px)"></div>`;
   fillDogam(s,true); runProg(s); }
 function renderSettings(){ const s=document.getElementById('settings'); const row=(t,act,grey)=>`<button class="srow" data-act="${act}"><span class="t-body" style="${grey?'color:var(--text-3)':''}">${t}</span><span class="ms">chevron_right</span></button>`;
+  setTimeout(()=>{ const vr=document.getElementById('verRow'); if(!vr) return; let n=0,t; vr.addEventListener('click',()=>{ n++; clearTimeout(t); t=setTimeout(()=>n=0,1500); if(n>=5){ n=0; const i=viewportInfo(); const d=document.getElementById('device').getBoundingClientRect(); dialog({title:'화면 정보',body:`창 ${i.inner} · 화면 ${i.screenH}x${i.screenW}\nvv ${i.vv} · outer ${i.outer}\nvh ${i.vh} · dvh ${i.dvh} · lvh ${i.lvh} · svh ${i.svh}\n상단 ${i.safeTop} · 하단 ${i.safeBottom}\n앱 ${Math.round(d.height)} · standalone ${i.standalone?'예':'아니오'}`,face:'01',color:'lime',buttons:[{label:'닫기',primary:true}]}); } }); },0);
   s.innerHTML=topbar('설정')+`<div class="shead">알림 설정</div><div class="srow" style="cursor:default"><span><span class="t-body" style="display:block">푸시 알림</span><span class="t-cap c3">모임 일정과 변경 소식을 받아요</span></span><button class="sw${F.push?' on':''}" id="pushSw" role="switch" aria-checked="${F.push}" aria-label="푸시 알림"></button></div>
   <div class="gap8"></div><div class="shead">서비스 정보</div>${row('공지사항','openNotice')}${row('신고 및 차단 목록','openBlock')}${row('이용약관','openTerms')}${row('개인정보 처리방침','openPrivacy')}
   <div class="gap8"></div><div class="shead">계정 관리</div>${row('로그아웃','logout')}${row('회원 탈퇴','withdraw',true)}
-  <div class="gap8"></div><div class="srow" style="cursor:default"><span class="t-body">앱 버전</span><span class="t-fn c3">1.0.0 (빌드 15)</span></div><div style="height:calc(env(safe-area-inset-bottom,0px) + 34px)"></div>`;
+  <div class="gap8"></div><div class="srow" id="verRow" style="cursor:default"><span class="t-body">앱 버전</span><span class="t-fn c3">1.0.0 (빌드 16)</span></div><div style="height:calc(env(safe-area-inset-bottom,0px) + 34px)"></div>`;
   s.querySelector('#pushSw').addEventListener('click',e=>{ F.push=!F.push; e.currentTarget.classList.toggle('on',F.push); e.currentTarget.setAttribute('aria-checked',F.push); buzz(8); toast(F.push?'푸시 알림을 켰어요':'푸시 알림을 껐어요'); }); }
 ACT.logout=()=>dialog({title:'로그아웃할까요?',body:'언제든 다시 로그인할 수 있어요.',face:'06',color:'lime',buttons:[{label:'취소'},{label:'로그아웃',primary:true,onClick:()=>{ store.set('loggedIn',false); Object.assign(A,{nick:'',gender:null,photo:null,pick:-1,avatar:null}); go('nick'); setTimeout(()=>toast('로그아웃했어요'),300); }}]});
 ACT.withdraw=()=>dialog({title:'정말 탈퇴할까요?',body:'놀이 기록과 복원 도감이 모두 사라지고\n되돌릴 수 없어요.',face:'12',color:'lime',buttons:[{label:'취소'},{label:'탈퇴하기',primary:true,onClick:()=>{ Object.assign(A,{nick:'',gender:null,photo:null,pick:-1,avatar:null}); store.set('onboarded',false); store.set('loggedIn',false); C.splashShort=null; go('splash'); }}]});
@@ -844,9 +846,17 @@ const ENTER={notif:renderNotif,notice:renderNotice,noticeD:renderNoticeD,block:r
   window.addEventListener('hashchange',hide);
 })();
 
-/* iPhone home-screen app: the reported viewport can be shorter than the screen (status bar zone), so size the app to the real screen */
-function fitDevice(){ const st=navigator.standalone===true||matchMedia('(display-mode: standalone)').matches, root=document.documentElement; if(!st||innerWidth>=520){ root.style.removeProperty('--appH'); return; } const portrait=innerHeight>=innerWidth, sh=portrait?Math.max(screen.width,screen.height):Math.min(screen.width,screen.height); root.style.setProperty('--appH',Math.max(innerHeight,sh)+'px'); }
-fitDevice(); addEventListener('resize',fitDevice); addEventListener('orientationchange',()=>setTimeout(fitDevice,250)); document.addEventListener('visibilitychange',fitDevice);
+/* iPhone home-screen app: the browser can report a window that is shorter than the real screen (the status-bar zone is left out),
+   which leaves a blank band at the bottom. Measure several height sources and, when the shortfall is about the status bar, size the app to the full screen. */
+function viewportInfo(){ const probe=(css)=>{ const e=document.createElement('div'); e.style.cssText='position:fixed;left:0;top:0;width:1px;visibility:hidden;pointer-events:none;'+css; document.body.appendChild(e); const v=Math.round(e.getBoundingClientRect().height); e.remove(); return v; };
+  return {inner:innerHeight, outer:outerHeight, screenH:screen.height, screenW:screen.width, vv:window.visualViewport?Math.round(window.visualViewport.height):0, safeTop:probe('height:env(safe-area-inset-top,0px)'), safeBottom:probe('height:env(safe-area-inset-bottom,0px)'), vh:probe('height:100vh'), dvh:probe('height:100dvh'), lvh:probe('height:100lvh'), svh:probe('height:100svh'), pct:probe('height:100%'), standalone:navigator.standalone===true, dm:matchMedia('(display-mode: standalone)').matches}; }
+function calcAppH(i){ const vis=Math.max(i.inner,i.vv||0,i.dvh||0,i.pct||0), tall=Math.max(i.screenH,i.screenW), tol=(i.safeTop||0)+6;
+  const bigger=[i.vh||0,i.lvh||0].filter(v=>v>vis&&v<=tall).sort((x,y)=>y-x)[0]||0;
+  if(tall-vis>0&&tall-vis<=tol) return tall;      /* short by about the status bar → whole screen */
+  if(bigger&&bigger-vis<=tol) return bigger;
+  return 0; }
+function fitDevice(){ const root=document.documentElement; if(innerWidth>=520){ root.style.removeProperty('--appH'); return; } const h=calcAppH(viewportInfo()); if(h) root.style.setProperty('--appH',h+'px'); else root.style.removeProperty('--appH'); }
+fitDevice(); [120,600,1600].forEach(t=>setTimeout(fitDevice,t)); addEventListener('resize',fitDevice); addEventListener('orientationchange',()=>setTimeout(fitDevice,250)); addEventListener('pageshow',fitDevice); document.addEventListener('visibilitychange',fitDevice); document.addEventListener('touchstart',fitDevice,{once:true,passive:true});
 /* ================= INIT ================= */
 renderHome();
 /* launch: first run → full splash → onboarding → nickname · logged out → short splash → nickname · logged in → short splash → home */
