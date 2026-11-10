@@ -553,7 +553,7 @@ function renderSettings(){ const s=document.getElementById('settings'); const ro
   s.innerHTML=topbar('설정')+`<div class="shead">알림 설정</div><div class="srow" style="cursor:default"><span><span class="t-body" style="display:block">푸시 알림</span><span class="t-cap c3">모임 일정과 변경 소식을 받아요</span></span><button class="sw${F.push?' on':''}" id="pushSw" role="switch" aria-checked="${F.push}" aria-label="푸시 알림"></button></div>
   <div class="gap8"></div><div class="shead">서비스 정보</div>${row('공지사항','openNotice')}${row('신고 및 차단 목록','openBlock')}${row('이용약관','openTerms')}${row('개인정보 처리방침','openPrivacy')}
   <div class="gap8"></div><div class="shead">계정 관리</div>${row('로그아웃','logout')}${row('회원 탈퇴','withdraw',true)}
-  <div class="gap8"></div><div class="srow" id="verRow" style="cursor:default"><span class="t-body">앱 버전</span><span class="t-fn c3">1.0.0 (빌드 20)</span></div><div style="height:calc(env(safe-area-inset-bottom,0px) + 34px)"></div>`;
+  <div class="gap8"></div><div class="srow" id="verRow" style="cursor:default"><span class="t-body">앱 버전</span><span class="t-fn c3">1.0.0 (빌드 21)</span></div><div style="height:calc(env(safe-area-inset-bottom,0px) + 34px)"></div>`;
   s.querySelector('#pushSw').addEventListener('click',e=>{ F.push=!F.push; e.currentTarget.classList.toggle('on',F.push); e.currentTarget.setAttribute('aria-checked',F.push); buzz(8); toast(F.push?'푸시 알림을 켰어요':'푸시 알림을 껐어요'); }); }
 ACT.logout=()=>dialog({title:'로그아웃할까요?',body:'언제든 다시 로그인할 수 있어요.',face:'06',color:'lime',buttons:[{label:'취소'},{label:'로그아웃',primary:true,onClick:()=>{ store.set('loggedIn',false); Object.assign(A,{nick:'',gender:null,photo:null,pick:-1,avatar:null}); go('nick'); setTimeout(()=>toast('로그아웃했어요'),300); }}]});
 ACT.withdraw=()=>dialog({title:'정말 탈퇴할까요?',body:'놀이 기록과 복원 도감이 모두 사라지고\n되돌릴 수 없어요.',face:'12',color:'lime',buttons:[{label:'취소'},{label:'탈퇴하기',primary:true,onClick:()=>{ Object.assign(A,{nick:'',gender:null,photo:null,pick:-1,avatar:null}); store.set('onboarded',false); store.set('loggedIn',false); C.splashShort=null; go('splash'); }}]});
@@ -571,18 +571,17 @@ function splashRun(){ SPT.forEach(clearTimeout); SPT=[]; const s=document.getEle
   const SB=[0,1,2].map(i=>{ const b=document.createElement('div'); b.className='sb'; b.style.zIndex=3-i; b.style.transformOrigin='50% 100%'; const gd=document.createElement('div'); gd.className='gsh'; st.insertBefore(gd,st.firstChild); b._sh=gd; b.innerHTML=`<span class="bd"><svg viewBox="${LOGO_PARTS[i][0]}" aria-hidden="true">${LOGO_PARTS[i][1]}</svg></span>`; st.appendChild(b); b.dataset.i=i; return b; });
   const squash=(b,a=1)=>b.querySelector('.bd').animate([{transform:'scale(1,1)'},{transform:`scale(${1+.26*a},${1-.26*a})`,offset:.32},{transform:'scale(1,1)'}],{duration:150,easing:'cubic-bezier(.2,.7,.3,1)'});
   function hop(b,x0,y0,x1,hs,delay=0,both=false){
-    /* one continuous physics timeline per ball: flight (parabola) → contact (single squash) → flight …
-       squash is baked into the same keyframes, so it can never drift out of sync with the landing */
-    const FL=hs.map(h=>220+Math.sqrt(h)*28), CT=hs.map((h,i)=>i===hs.length-1?120:70);
-    const seg=[]; let tc=0; hs.forEach((h,i)=>{ seg.push({t0:tc,t1:tc+FL[i],f:1,i,h}); tc+=FL[i]; seg.push({t0:tc,t1:tc+CT[i],f:0,i,h}); tc+=CT[i]; }); const T=tc;
-    const ST=.10, SQ=.26, kf=[], sk=[], step=13, n=Math.ceil(T/step), last=hs.length-1;
-    for(let k=0;k<=n;k++){ const t=Math.min(T,k*step), g=seg.find(q=>t<=q.t1)||seg[seg.length-1], v=(t-g.t0)/(g.t1-g.t0), x=x0+(x1-x0)*(t/T); let y,sx,sy;
-      if(g.f){ y=(g.i===0?y0:0)*(1-v)-4*g.h*v*(1-v); sy=1+ST*Math.pow(Math.abs(1-2*v),1.2); sx=1/Math.sqrt(sy); }
-      else { y=0; const q=Math.sin(Math.PI*v), a=Math.min(1,.4+g.h/120), base=g.i===last? (1+ST)+(1-(1+ST))*(v*v*(3-2*v)) : 1+ST; sy=base-(base-(1-SQ*a))*q; sx=1/Math.sqrt(base)+((1+SQ*a)-1/Math.sqrt(base))*q; }
-      const o=t/T, hh=Math.max(0,-y), sc=Math.max(.4,1-hh/260);
+    /* one continuous bounce timeline per ball. There is no pause on the ground: the velocity just reverses at each impact (like a rubber ball),
+       flight time follows the physics (∝ √height), the ball stretches with its speed, and one quick squash happens right AFTER each impact. */
+    const K=42, seg=[]; let tc=0; hs.forEach((h,i)=>{ const d=K*Math.sqrt(h+(i===0?Math.abs(Math.min(0,y0))*.5:0)); seg.push({t0:tc,t1:tc+d,h,i}); tc+=d; });
+    const TAIL=130, T=tc+TAIL, imp=seg.map(q=>q.t1), kf=[], sk=[], step=10, n=Math.ceil(T/step);
+    for(let k=0;k<=n;k++){ const t=Math.min(T,k*step), g=seg.find(q=>t<=q.t1); let y=0, spd=0;
+      if(g){ const u=(t-g.t0)/(g.t1-g.t0); y=(g.i===0?Math.min(0,y0):0)*(1-u)-4*g.h*u*(1-u); spd=Math.abs(1-2*u)*Math.sqrt(g.h/150); }
+      let c=0; imp.forEach((ti,i)=>{ const a=Math.min(1,.35+Math.sqrt(hs[i]/150)*.65), d=t-ti, s=d<0?16:38; c=Math.max(c,a*Math.exp(-(d/s)*(d/s))); });
+      const st=1+.12*Math.min(1,spd), sy=st*(1-.26*c), sx=(1+.26*c)/Math.sqrt(st), x=x0+(x1-x0)*Math.min(1,t/tc), o=t/T, sc=Math.max(.4,1-Math.max(0,-y)/260);
       kf.push({transform:`translate(${x.toFixed(2)}px,${y.toFixed(2)}px) scale(${sx.toFixed(3)},${sy.toFixed(3)})`,offset:o});
-      sk.push({transform:`translateX(${x.toFixed(2)}px) scaleX(${(sc*(g.f?1:1.08)).toFixed(3)})`,opacity:sc,offset:o}); }
-    let tl=0; hs.forEach((h,i)=>{ tl+=FL[i]; SPT.push(sT(()=>{ tone(380+(+b.dataset.i)*120+h,.16,.08); buzz(6); },delay+tl)); tl+=CT[i]; });
+      sk.push({transform:`translateX(${x.toFixed(2)}px) scaleX(${(sc*(1+.1*c)).toFixed(3)})`,opacity:sc,offset:o}); }
+    imp.forEach((ti,i)=>SPT.push(sT(()=>{ tone(380+(+b.dataset.i)*120+hs[i],.16,.08); buzz(6); },delay+ti)));
     const fill=both?'both':'forwards'; b.animate(kf,{duration:T,delay,easing:'linear',fill}); b._sh.animate(sk,{duration:T,delay,easing:'linear',fill}); b.dataset.x=x1; return delay+T; }
   if(reduce){ SB.forEach((b,i)=>{ b.style.opacity=1; b.style.transform=`translate(${[-51,0,51][i]}px,0)`; }); SPT.push(sT(()=>{ C.obFromSplash=true; go('onboard'); },900)); return; }
   window.__ms=0.76; /* first-run splash plays a touch quicker than the rest of the app */
@@ -593,14 +592,14 @@ function splashRun(){ SPT.forEach(clearTimeout); SPT=[]; const s=document.getEle
   let w=e1+60, wend=0; SB.forEach((b,i)=>{ wend=Math.max(wend,hop(b,+b.dataset.x,0,+b.dataset.x,[46,20],w+i*115)); }); w=wend+70; /* waves settle completely (46→16→5) before the balls gather */
   hop(SB[0],-92,0,-51,[26],w); hop(SB[2],92,0,51,[26],w); hop(SB[1],0,0,0,[64,18],w-60);
   const start=w+420; SB.forEach(b=>b._sh.animate([{opacity:1},{opacity:0}],{duration:300,delay:start,fill:'forwards',easing:'ease-in'})); SB.forEach(b=>b.querySelector('.bd').animate([{transform:'scale(1)'},{transform:'scale(1.18,.8)'},{transform:'scale(.92,1.12)'},{transform:'scale(1)'}],{duration:360,delay:start,easing:'ease-out'}));
-  const DUR=1200,GAP=420,COLS=['#5258EE','#68E2FA','#C5F656'],PLAN={2:{d:1,rot:210},1:{d:-1,rot:170},0:{d:-1,rot:250}};
+  const DUR=1200,GAP=420,COLS=['#5258EE','#68E2FA','#C5F656'],PLAN={0:{x1:-210,y1:30,x2:-190,y2:-250,rot:-300},1:{x1:70,y1:90,x2:60,y2:-270,rot:200},2:{x1:210,y1:30,x2:190,y2:-250,rot:300}};
   [2,1,0].forEach((idx,k)=>SPT.push(sT(()=>{ const b=SB[idx], r=b.getBoundingClientRect(), sr=st.getBoundingClientRect(), W2=st.offsetWidth, H2=st.offsetHeight, S=Math.hypot(W2,H2)/72*2.4;
     const x0=r.left-sr.left+(r.width-72)/2, y0=r.top-sr.top+(r.height-72)/2; const c=document.createElement('div'); c.className='wipe'; c.style.left=x0+'px'; c.style.top=y0+'px'; c.style.zIndex=10+k; c.innerHTML=`<div class="solid" style="background:${COLS[idx]}"></div><svg viewBox="${LOGO_PARTS[idx][0]}" aria-hidden="true">${LOGO_PARTS[idx][1]}</svg>`; st.appendChild(c); b.style.visibility='hidden';
     const p=PLAN[idx], ex=W2/2-36-x0, ey=H2/2-36-y0, kf=[], N=Math.round(DUR/14); /* swoop: back-swing out to the side → big arc → perspective zoom into the viewer */
-    const P1x=p.d*180, P1y=70, P2x=-p.d*110, P2y=-200;
+    const P1x=p.x1, P1y=p.y1, P2x=p.x2, P2y=p.y2;
     for(let f=0;f<=N;f++){ const t=f/N, u=t*t*(3-2*t), m=1-u;
       const x=3*m*m*u*P1x+3*m*u*u*P2x+u*u*u*ex, y=3*m*m*u*P1y+3*m*u*u*P2y+u*u*u*ey;
-      const sc=1/(1-u*(1-1/S)), rot=p.d*p.rot*u;
+      const sc=1/(1-u*(1-1/S)), rot=p.rot*u;
       kf.push({transform:`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${rot.toFixed(1)}deg) scale(${sc.toFixed(3)})`,offset:t}); }
     c.animate(kf,{duration:DUR,easing:'linear',fill:'forwards'}); c.querySelector('.solid').animate([{opacity:0},{opacity:0,offset:.55},{opacity:1,offset:.78},{opacity:1}],{duration:DUR,fill:'forwards'}); c.querySelector('svg').animate([{opacity:1},{opacity:1,offset:.7},{opacity:0,offset:.85},{opacity:0}],{duration:DUR,fill:'forwards'}); tone(420+k*140,.16,.08); buzz(10); },start+360+k*GAP)));
   SPT.push(sT(()=>{ window.__ms=1; C.obFromSplash=true; go('onboard'); },start+360+2*GAP+DUR-60)); }/* ================= ONBOARDING (O1–O4) ================= */

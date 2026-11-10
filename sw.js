@@ -1,5 +1,5 @@
 /* 땡땡이 service worker — caches everything on the first visit so the app also opens without internet (e.g. at the exhibition). */
-const CACHE='ddaeng-v20';
+const CACHE='ddaeng-v21';
 const ASSETS=["assets/fonts/PretendardVariable.woff2", "assets/fonts/material-symbols-rounded-subset.woff2", "assets/fonts/material-symbols.css", "assets/fonts/pretendard.css", "assets/icons/apple-touch-icon.png", "assets/icons/icon-192.png", "assets/icons/icon-512.png","assets/icons/icon-square.svg","assets/icons/icon.svg", "assets/icons/icon-maskable-512.png", "assets/vendor/hangul.min.js", "assets/vendor/matter.min.js", "css/app.css", "index.html", "js/app.js", "manifest.webmanifest"];
 self.addEventListener('install',e=>{ e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./',...ASSETS])).then(()=>self.skipWaiting())); });
 self.addEventListener('activate',e=>{ e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())); });
