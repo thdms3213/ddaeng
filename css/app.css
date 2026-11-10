@@ -570,4 +570,4 @@ body{background:var(--outer);font-family:Pretendard Variable,Pretendard,"Apple S
    so the document is made at least as tall as the screen. The 100lvh cap keeps it from scrolling once iOS gives the full height. */
 @media (display-mode: standalone){ html{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0px)))} }
 html.ios-standalone{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0px)))}
-
+@media (max-height:700px){ #aiwait .aicards{transform:scale(.72);transform-origin:50% 0;height:210px} }
