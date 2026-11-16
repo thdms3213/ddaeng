@@ -35,7 +35,16 @@
       <span class="deco" id="deco2" style="right:71px;top:calc(var(--st) + 96px)"></span>
       <span class="deco" id="deco3" style="right:32px;top:calc(var(--st) + 113px);z-index:3"></span>
       <div class="hero-body">
-        <div class="hi"><div class="t-h2"><span id="hiName">놀자곰</span>님,<br>오늘도 놀아볼까요?</div><p class="t-fn">이번 주에 함께할 놀이가 1개 있어요.</p></div>
+        <div class="hi"><div class="t-h2"><span id="hiName">놀자곰</span>님,<br>오늘도 놀아볼까요?</div><p class="t-fn">이번 달 놀이 기록을 확인해 보세요.</p></div>
+        <div class="card rec-card" data-go="record" role="button" tabindex="0" aria-label="기록판 보기" style="color:var(--black,#1A1A1A)">
+          <div><div class="t-fn-b" style="margin-bottom:6px;color:#1A1A1A">이번 달 놀이 기록</div><div class="num" style="color:#1A1A1A"><span class="t-h1" id="recCount">21</span><span class="t-head" style="line-height:32px">번</span></div><div class="t-fn c2">이번 달 놀이에 끼었어요</div></div>
+          <div class="mini" id="miniPile"></div>
+        </div>
+      </div>
+    </div>
+    <div class="content">
+      <section>
+        <div class="sec-title"><div><div class="t-h3">다가오는 놀이</div><div class="t-fn c2">이번 주에 함께할 놀이가 1개 있어요</div></div></div>
         <div class="card status-card">
           <div class="l">
             <span><span class="tag play">얼음땡</span></span>
@@ -44,16 +53,7 @@
           </div>
           <div class="dday">D-2</div>
         </div>
-        <button class="btn primary" id="chatBtn">채팅방 입장하기</button>
-      </div>
-    </div>
-    <div class="content">
-      <section>
-        <div class="sec-title"><div class="t-h3">이번 달 놀이 기록</div><button class="more" data-go="record">기록판 보기<span class="ms">arrow_circle_right</span></button></div>
-        <div class="card rec-card" data-go="record" role="button" tabindex="0" aria-label="기록판 보기">
-          <div><div class="num"><span class="t-h1" id="recCount">21</span><span class="t-head" style="line-height:32px">번</span></div><div class="t-fn c2">이번 달 놀이에 끼었어요</div></div>
-          <div class="mini" id="miniPile"></div>
-        </div>
+        <button class="btn primary" id="chatBtn" style="margin-top:20px;width:100%">채팅방 입장하기</button>
       </section>
       <section>
         <div class="sec-title"><div><div class="t-h3">나의 놀이 도감</div><div class="t-fn c2">12개 중 6개를 되찾았어요</div></div><button class="more" data-go="restore">전체보기<span class="ms">arrow_circle_right</span></button></div>

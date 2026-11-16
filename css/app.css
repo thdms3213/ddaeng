@@ -50,7 +50,7 @@ body{background:var(--outer);font-family:Pretendard Variable,Pretendard,"Apple S
 .btn.md{height:48px}
 .btn:focus-visible{outline:3px solid var(--purple-500);outline-offset:3px}
 .tag{display:inline-flex;align-items:center;height:24px;padding:0 8px;border-radius:var(--r-full);font-size:12px;font-weight:600;line-height:20px}
-.tag.play{background:var(--purple-50);color:var(--purple-600)}
+.tag.play{background:var(--purple-50);color:var(--purple-600);flex-direction:row;gap:0;padding:0 8px;font-size:12px;line-height:20px;font-weight:400;font-family:inherit}
 .tag.rec{background:var(--grey-200);color:var(--grey-800)}
 .tag.lime{background:var(--lime-500);border:1px solid var(--line);height:26px}
 .card{background:var(--bg-surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow-1)}
