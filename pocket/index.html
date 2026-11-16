@@ -98,8 +98,9 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 .chip b{font-family:'Press Start 2P',monospace;font-size:7px;font-weight:400}
 .chip.on{background:#1A1A1A;border-color:#1A1A1A;color:#FDFDFD}
 .chip.on b{color:#C5F656}
+.vrow .vn{background:#FDFDFD;transition:background .2s}.vrow.on .vn{background:#C5F656}.vrow:not(.on) p>b{color:#8A8A8A!important;font-size:15px!important}.vd{display:block;animation:fade .25s both}
 .vpanel{position:absolute;left:28px;top:64px;width:200px;height:336px;border-radius:22px;background:#F4FBE3;border:2px solid #E2F3B8;box-sizing:border-box}
-.vrow{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1.5px solid #E3E4EA}
+.vrow{cursor:pointer;display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1.5px solid #E3E4EA}
 .blink{animation:blink 1s steps(1) infinite}
 .clr{position:absolute;inset:0;overflow:hidden;cursor:pointer;background:#5BC8FA;z-index:8;animation:clrfade .9s .5s ease both}
 @keyframes clrfade{from{opacity:0}}
@@ -191,19 +192,19 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 <div class="view">
 <div class="chips"><sc-for list="{{chips}}" as="cp" hint-placeholder-count="5"><button class="chip {{cp.on}}" onClick="{{cp.pick}}"><b>{{cp.n}}</b>{{cp.title}}</button></sc-for></div>
 <div class="vpanel"></div>
-<sc-if value="{{st.phone}}" hint-placeholder-val="{{true}}"><div style="position: absolute; left: 53px; top: 76px; width: 150px; height: 312px; border: 4px solid #1A1A1A; border-radius: 24px; overflow: hidden; background: #1A1A1A; box-sizing: border-box"><img src="{{st.img}}" alt="{{st.alt}}" style="width: 100%; height: 100%; object-fit: cover; object-position: top; display: block"></div></sc-if>
-<sc-if value="{{st.watch}}" hint-placeholder-val="{{false}}">
+<sc-if value="{{sv.phone}}" hint-placeholder-val="{{true}}"><div style="position: absolute; left: 53px; top: 76px; width: 150px; height: 312px; border: 4px solid #1A1A1A; border-radius: 24px; overflow: hidden; background: #1A1A1A; box-sizing: border-box"><img src="{{sv.img}}" alt="{{sv.alt}}" style="width: 100%; height: 100%; object-fit: cover; object-position: top; display: block"></div></sc-if>
+<sc-if value="{{sv.watch}}" hint-placeholder-val="{{false}}">
 <span style="position: absolute; left: 77px; top: 76px; width: 102px; height: 80px; background: #3A3B45; border: 3px solid #1A1A1A; border-bottom: 0; border-radius: 16px 16px 0 0; box-sizing: border-box"></span>
 <span style="position: absolute; left: 77px; top: 308px; width: 102px; height: 80px; background: #3A3B45; border: 3px solid #1A1A1A; border-top: 0; border-radius: 0 0 16px 16px; box-sizing: border-box"></span>
 <span style="position: absolute; left: 206px; top: 178px; width: 10px; height: 38px; background: #1A1A1A; border-radius: 0 5px 5px 0"></span>
-<div style="position: absolute; left: 48px; top: 136px; width: 160px; height: 192px; border-radius: 42px; background: #1A1A1A; border: 4px solid #1A1A1A; box-sizing: border-box; padding: 7px; box-shadow: inset 0 0 0 3px #4A4B55"><img src="{{st.img}}" alt="{{st.alt}}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 32px; display: block"></div>
+<div style="position: absolute; left: 48px; top: 136px; width: 160px; height: 192px; border-radius: 42px; background: #1A1A1A; border: 4px solid #1A1A1A; box-sizing: border-box; padding: 7px; box-shadow: inset 0 0 0 3px #4A4B55"><img src="{{sv.img}}" alt="{{sv.alt}}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 32px; display: block"></div>
 </sc-if>
 <div style="position: absolute; left: 256px; top: 64px; right: 30px; height: 336px; display: flex; flex-direction: column; justify-content: center; padding-bottom: 28px; box-sizing: border-box">
 <p style="margin: 0 0 6px; font-size: 32px; line-height: 38px; font-weight: 900; letter-spacing: -0.03em">{{st.title}}</p>
 <p style="margin: 0 0 18px; font-size: 15px; line-height: 22px; font-weight: 700; color: #5C5C5C">{{st.desc}}</p>
-<sc-for list="{{st.notes}}" as="nt" hint-placeholder-count="3"><div class="vrow"><b class="vn">{{nt.k}}</b><p style="margin: 0; font-size: 14px; line-height: 20px; color: #3A3A3A"><b style="display: block; font-size: 17px; line-height: 23px; color: #1A1A1A">{{nt.t}}</b>{{nt.d}}</p></div></sc-for>
+<sc-for list="{{slides}}" as="sd" hint-placeholder-count="3"><div class="vrow {{sd.on}}" onClick="{{sd.pick}}" role="button" tabindex="0"><b class="vn">{{sd.k}}</b><p style="margin: 0; font-size: 14px; line-height: 20px; color: #3A3A3A"><b style="display: block; font-size: 17px; line-height: 23px; color: #1A1A1A">{{sd.t}}</b><sc-if value="{{sd.open}}" hint-placeholder-val="{{false}}"><span class="vd">{{sd.d}}</span></sc-if></p></div></sc-for>
 </div>
-<div class="hint"><span><b>◀▶</b>단계</span><span><b>B</b>홈</span></div>
+<div class="hint"><span><b>◀▶</b>화면 넘기기</span><span><b>B</b>홈</span></div>
 </div>
 </sc-if>
 
@@ -276,12 +277,11 @@ function rr(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y); c.a
 var EN=['STAGE 01 · START','STAGE 02 · HOME','STAGE 03 · MEET UP','STAGE 04 · PLAY','STAGE 05 · CLEAR'];
 var ROT=[-6,4,-3,5];
 var AC=null;
-var ST=CH.map(function(c,i){ var n=c.subs[0].notes.concat(c.subs[1]?[c.subs[1].notes[0]]:[]); return {n:i+1,title:c.title,desc:c.desc,img:c.subs[0].img,alt:c.subs[0].alt,watch:c.subs[0].kind==='watch',notes:n.map(function(x,k){ return {k:k+1,t:x[0],d:x[1]}; })}; });
-ST[3].img=CH[3].subs[2].img; ST[3].watch=true; ST[3].alt=CH[3].subs[2].alt;
+var ST=CH.map(function(c,i){ return {n:i+1,title:c.title,desc:c.desc,slides:c.subs.map(function(sb){ return {img:sb.img,alt:sb.alt,watch:sb.kind==='watch',t:sb.notes[0][0],d:sb.notes[0][1]}; })}; });
 class Component extends DCLogic {
   constructor(p){
     super(p);
-    this.state={mode:'off',sel:0,st:0,score:0,lives:3,status:'ready',sound:true,scale:1,clock:'12:00',lDown:false,rDown:false,aDown:false,bDown:false,xDown:false,yDown:false};
+    this.state={mode:'off',sel:0,st:0,sl:0,score:0,lives:3,status:'ready',sound:true,scale:1,clock:'12:00',lDown:false,rDown:false,aDown:false,bDown:false,xDown:false,yDown:false};
     var self=this;
     this.setCanvas=function(el){ if(el){ if(el!==self.cv){ self.cv=el; self.initGame(); } } else { cancelAnimationFrame(self.raf); self.cv=null; } };
   }
@@ -306,16 +306,19 @@ class Component extends DCLogic {
       clearTimeout(this.bt); this.bt=setTimeout(function(){ if(self.state.mode==='boot') self.setState({mode:'home'}); },1900);
     } else { clearTimeout(this.bt); this.setState({mode:'off'}); this.beep(330,0.1); this.beep(196,0.2,'square',0.1); }
   }
+  step(d){ var st=this.state.st, sl=this.state.sl+d;
+    if(sl>=ST[st].slides.length){ st=(st+1)%ST.length; sl=0; } else if(sl<0){ st=(st+ST.length-1)%ST.length; sl=ST[st].slides.length-1; }
+    this.setState({st:st,sl:sl}); this.beep(660,0.04); }
   dir(dx,dy){
     var m=this.state.mode;
     if(m==='home'){ var s=(dx||dy)<0?0:1; if(s!==this.state.sel){ this.setState({sel:s}); this.beep(660,0.04); } else this.beep(196,0.05); }
-    else if(m==='view'){ this.setState({st:(this.state.st+(dx||dy)+5)%5}); this.beep(660,0.04); }
+    else if(m==='view'){ this.step(dx||dy); }
     else if(m==='game'&&this.pad){ this.pad.tx=this.pad.x+(dx||0)*130; }
   }
   A(){
     this.press('aDown'); var m=this.state.mode;
-    if(m==='home'){ this.beep(880,0.06); this.beep(1175,0.12,'square',0.07); if(this.state.sel===0) this.setState({mode:'view',st:0}); else this.setState({mode:'game',score:0,lives:3,status:'ready'}); }
-    else if(m==='view'){ this.setState({st:(this.state.st+1)%5}); this.beep(660,0.05); }
+    if(m==='home'){ this.beep(880,0.06); this.beep(1175,0.12,'square',0.07); if(this.state.sel===0) this.setState({mode:'view',st:0,sl:0}); else this.setState({mode:'game',score:0,lives:3,status:'ready'}); }
+    else if(m==='view'){ this.step(1); }
     else if(m==='game'){ var st=this.state.status; if(st==='ready') this.serve(); else if(st==='over'||st==='clear') this.restart(); this.beep(740,0.05); }
   }
   B(){ this.press('bDown'); var m=this.state.mode; if(m==='view'||m==='game'){ this.setState({mode:'home',sel:m==='game'?1:0}); this.beep(392,0.08); this.beep(330,0.1,'square',0.08); } }
@@ -450,8 +453,10 @@ class Component extends DCLogic {
       clock:s.clock, sel0:s.sel===0?'sel':'', sel1:s.sel===1?'sel':'',
       pick0:function(){ if(self.state.sel===0) self.A(); else { self.setState({sel:0}); self.beep(660,0.04); } },
       pick1:function(){ if(self.state.sel===1) self.A(); else { self.setState({sel:1}); self.beep(660,0.04); } },
-      chips:ST.map(function(x,i){ return {n:i+1,title:x.title,on:i===s.st?'on':'',pick:function(){ self.setState({st:i}); self.beep(660,0.04); }}; }),
-      st:{n:st.n,title:st.title,desc:st.desc,img:st.img,alt:st.alt,phone:!st.watch,watch:!!st.watch,notes:st.notes},
+      chips:ST.map(function(x,i){ return {n:i+1,title:x.title,on:i===s.st?'on':'',pick:function(){ self.setState({st:i,sl:0}); self.beep(660,0.04); }}; }),
+      st:{n:st.n,title:st.title,desc:st.desc},
+      sv:{img:st.slides[s.sl].img,alt:st.slides[s.sl].alt,phone:!st.slides[s.sl].watch,watch:!!st.slides[s.sl].watch},
+      slides:st.slides.map(function(x,k){ return {k:k+1,t:x.t,d:x.d,on:k===s.sl?'on':'',open:k===s.sl,pick:function(){ if(k!==self.state.sl){ self.setState({sl:k}); self.beep(660,0.04); } }}; }),
       setCanvas:this.setCanvas, score:s.score, total:TOTAL, livesTxt:'●●●'.slice(0,s.lives)+'○○○'.slice(0,3-s.lives),
       pts:('0000'+s.score*50).slice(-5), lifeDots:[0,1,2].map(function(i){ return {on:i<s.lives?'on':''}; }),
       isReady:s.status==='ready', isOver:s.status==='over', toMenu:function(e){ if(e&&e.stopPropagation) e.stopPropagation(); self.B(); },

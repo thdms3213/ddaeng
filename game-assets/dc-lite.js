@@ -60,7 +60,8 @@
       detach(live); live.replaceWith(fresh); attach(fresh); return;
     }
     if (live.nodeType === 3) { if (live.nodeValue !== fresh.nodeValue) live.nodeValue = fresh.nodeValue; return; }
-    for (const a of Array.from(live.attributes)) if (!fresh.hasAttribute(a.name)) live.removeAttribute(a.name);
+    const isCv = live.localName === 'canvas';
+    for (const a of Array.from(live.attributes)) if (!fresh.hasAttribute(a.name) && !(isCv && (a.name === 'width' || a.name === 'height'))) live.removeAttribute(a.name);
     for (const a of fresh.attributes) if (live.getAttribute(a.name) !== a.value) live.setAttribute(a.name, a.value);
     bindEvents(live, fresh.__ev || {});
     if (fresh.__ref !== live.__ref) { if (typeof live.__ref === 'function') live.__ref(null); live.__ref = fresh.__ref; if (typeof live.__ref === 'function') live.__ref(live); }
