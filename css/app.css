@@ -595,15 +595,15 @@ html.ios-standalone{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0p
 .wtm{color:#FDFDFD}
 .wb{position:absolute;left:8px;width:171px;border:0;cursor:pointer;font-family:inherit;font-size:15px;font-weight:600;line-height:20px;display:flex;align-items:center;justify-content:center;transition:background .12s,transform .12s}
 .wb:active{transform:scale(.97)}
-.wb.p{height:40px;border-radius:20px;background:#C5F656;color:#1A1A1A}
-.wb.p:active{background:#B3E04E}
+.wb.p{height:40px;border-radius:20px;background:linear-gradient(127.8deg,#91DF1D 11.3%,#6CC9D3 59.7%,#4F55CD 84.6%);color:#1A1A1A}
+.wb.p:active{filter:brightness(.92)}
 .wb.s{height:36px;border-radius:18px;background:#1A1A1A;color:#FDFDFD}
 .wb.s:active{background:#484848}
 .wspin{width:15px;height:15px;border:2px solid #1A1A1A;border-right-color:transparent;border-radius:50%;animation:wsp .7s linear infinite}
 @keyframes wsp{to{transform:rotate(360deg)}}
-.wenter{position:absolute;left:54px;top:40px;width:80px;height:80px;border-radius:50%;border:0;background:#C5F656;color:#1A1A1A;font-family:inherit;font-size:17px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;animation:wbreath 2.2s ease-in-out infinite}
-.wenter:active{background:#B3E04E;transform:scale(.95)}
-@keyframes wbreath{0%,100%{box-shadow:0 0 0 0 rgba(197,246,86,.45)}50%{box-shadow:0 0 0 9px rgba(197,246,86,0)}}
+.wenter{position:absolute;left:54px;top:40px;width:80px;height:80px;border-radius:50%;border:0;background:linear-gradient(198.6deg,#91DF1D 7.5%,#6CC9D3 104.5%,#4F55CD 154%);color:#1A1A1A;font-family:inherit;font-size:17px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;animation:wbreath 2.2s ease-in-out infinite}
+.wenter:active{filter:brightness(.92);transform:scale(.95)}
+@keyframes wbreath{0%,100%{box-shadow:0 0 0 0 rgba(145,223,29,.45)}50%{box-shadow:0 0 0 9px rgba(145,223,29,0)}}
 .wmt{position:absolute;left:8px;width:171px;text-align:center}
 .wmt b{display:block;font-size:17px;line-height:24px;font-weight:600;color:#FDFDFD;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wmt span{display:block;font-size:11px;line-height:14px;color:#B8B8B8}
@@ -622,11 +622,11 @@ html.ios-standalone{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0p
 .wl:active i{transform:scale(.92)}
 .wl svg{width:28px;height:28px}
 .wl.s i{background:#1A1A1A;color:#FDFDFD}.wl.s span{color:#B8B8B8}
-.wl.p i{background:#C5F656;color:#1A1A1A}.wl.p span{color:#C5F656}
+.wl.p i{background:linear-gradient(198.6deg,#91DF1D 7.5%,#6CC9D3 104.5%,#4F55CD 154%);color:#1A1A1A}.wl.p span{color:#C5F656}
 .wc{position:absolute;width:44px;height:44px;border:0;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s}
 .wc:active{transform:scale(.92)}
 .wc svg{width:20px;height:20px}
-.wc.s{background:#1A1A1A;color:#FDFDFD}.wc.p{background:#C5F656;color:#1A1A1A}
+.wc.s{background:#484848;color:#FDFDFD}.wc.p{background:linear-gradient(198.6deg,#91DF1D 7.5%,#6CC9D3 104.5%,#4F55CD 154%);color:#1A1A1A}
 .wring{position:absolute}
 .wrt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .wrt b{font-size:36px;line-height:40px;font-weight:700;color:#C5F656;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
@@ -666,3 +666,9 @@ html.ios-standalone{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0p
 
 #myTown.on{display:flex;flex-direction:column}
 #myTown.on>.mt-body{flex:1}
+
+/* 워치 주 버튼: 피그마 그라데이션 + 안쪽 흰 글로우(Linear Dodge) */
+.wenter,.wb.p,.wl.p i,.wc.p{isolation:isolate}
+.wenter::before,.wb.p::before,.wl.p i::before,.wc.p::before{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 15.5px rgba(255,255,255,.62);mix-blend-mode:plus-lighter;z-index:-1;pointer-events:none}
+.wl.p i{position:relative}
+.wb.p{position:absolute}
