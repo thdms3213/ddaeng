@@ -907,7 +907,7 @@ const WACT={
   tplay(){ WS.run=true; WS.paused=false; WS.left=WS.total; WS.endAt=Date.now()+WS.left*1000; clearInterval(WS.timer); WS.timer=setInterval(wTick,200); buzz(14); tone(520,.12,.08); wDraw(); },
   tpause(){ if(WS.paused){ WS.paused=false; WS.endAt=Date.now()+WS.left*1000; } else { WS.paused=true; WS.left=Math.max(0,(WS.endAt-Date.now())/1000); } buzz(8); wDraw(); },
   treset(){ WS.run=false; WS.paused=false; WS.left=WS.total; clearInterval(WS.timer); buzz(8); wDraw(); },
-  finish(){ buzz([20,30]); WS.run=false; clearInterval(WS.timer); go(WS.role==='leader'?'attend':'rate'); },
+  finish(){ buzz([20,30]); WS.run=false; clearInterval(WS.timer); if(C.attend) for(const k in C.attend) if(C.attend[k]===null) C.attend[k]=0; C.recorded=false; go('done'); },
   ack(){ buzz(8); WS.scr=WS.hist.pop()||'radar'; wDraw('back'); },
   reconnect(){ if(WS.loading) return; WS.loading=true; wDraw(); sT(()=>{ WS.loading=false; buzz([20,30]); WS.scr=WS.hist.pop()||'play'; wDraw('back'); wToast('다시 연결됐어요'); },1300); }
 };
