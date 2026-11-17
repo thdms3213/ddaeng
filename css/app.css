@@ -119,8 +119,8 @@ body{background:var(--outer);font-family:Pretendard Variable,Pretendard,"Apple S
 .rec-go .ms{font-size:20px}
 .rec-card .num{display:flex;align-items:flex-end;gap:4px}
 .mini{position:relative;width:172px;height:190px;flex:none;margin-right:8px}
-.mini .ball{position:absolute;animation:ballroll var(--dur,4s) ease-in-out var(--dl,0s) infinite alternate;will-change:transform}
-@keyframes ballroll{from{transform:translateX(calc(var(--dx,3px)*-1)) rotate(calc(var(--rot,8deg)*-1))}to{transform:translateX(var(--dx,3px)) rotate(var(--rot,8deg))}}
+.mini .ball{position:absolute;animation:ballroll var(--dur,3s) cubic-bezier(.45,.05,.55,.95) var(--dl,0s) infinite alternate;will-change:transform}
+@keyframes ballroll{0%{transform:translateX(calc(var(--dx,3px)*-1)) rotate(calc(var(--rot,8deg)*-1))}50%{transform:translateX(0) translateY(-3px) rotate(0)}100%{transform:translateX(var(--dx,3px)) rotate(var(--rot,8deg))}}
 @media (prefers-reduced-motion:reduce){.mini .ball{animation:none}}
 .dogam{padding:20px;display:flex;flex-direction:column;gap:20px}
 .dogam .grid{display:grid;grid-template-columns:repeat(4,1fr);row-gap:20px}
@@ -576,7 +576,7 @@ body{background:var(--outer);font-family:Pretendard Variable,Pretendard,"Apple S
    so the document is made at least as tall as the screen. The 100lvh cap keeps it from scrolling once iOS gives the full height. */
 @media (display-mode: standalone){ html{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0px)))} }
 html.ios-standalone{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0px)))}
-@media (max-height:700px){ #aiwait .aicards{transform:scale(.72);transform-origin:50% 0;height:210px} }
+@media (max-height:600px){ #aiwait .aicards{transform:scale(.8);transform-origin:50% 0;height:240px} }
 
 /* ================= G: 애플워치 화면 (피그마 G 시리즈, 187×223 화면) ================= */
 #watch{background:var(--bg-surface)}
