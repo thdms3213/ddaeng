@@ -98,6 +98,10 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 .chip b{font-family:'Press Start 2P',monospace;font-size:7px;font-weight:400}
 .chip.on{background:#1A1A1A;border-color:#1A1A1A;color:#FDFDFD}
 .chip.on b{color:#C5F656}
+.guide{position:fixed;left:0;right:0;bottom:22px;z-index:5;display:flex;justify-content:center;gap:12px;pointer-events:none;min-height:34px}
+.guide span{display:flex;align-items:center;gap:8px;height:34px;padding:0 16px 0 5px;border-radius:17px;background:#FDFDFD;border:2px solid #1A1A1A;font-size:15px;font-weight:700;color:#1A1A1A;white-space:nowrap}
+.guide b{min-width:26px;height:24px;padding:0 8px;border-radius:12px;background:#1A1A1A;color:#C5F656;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;box-sizing:border-box}
+body.m .guide{display:none}
 .vrow .vn{background:#FDFDFD;transition:background .2s}.vrow.on .vn{background:#C5F656}.vrow:not(.on) p>b{color:#8A8A8A!important;font-size:15px!important}.vd{display:block;animation:fade .25s both}
 .vpanel{position:absolute;left:28px;top:64px;width:200px;height:336px;border-radius:22px;background:#F4FBE3;border:2px solid #E2F3B8;box-sizing:border-box}
 .vrow{cursor:pointer;display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1.5px solid #E3E4EA}
@@ -132,6 +136,7 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 </style>
 </helmet>
 <div style="height: 100vh; min-height: 520px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: 'Pretendard', system-ui, sans-serif; color: #1A1A1A; word-break: keep-all; background-color: #F4FBE3; background-image: radial-gradient(#C5F656 1.6px, transparent 2px); background-size: 22px 22px">
+<div class="guide"><sc-for list="{{guide}}" as="gd" hint-placeholder-count="3"><span><b>{{gd.k}}</b>{{gd.t}}</span></sc-for></div>
 <div id="stage" style="position: relative; flex: none; width: 1540px; height: 770px; transform: translate({{tx}}px, {{ty}}px) scale({{scale}}); transform-origin: center center">
 
 <button class="shoulder ln {{lDown}}" style="left: 160px" onClick="{{bL}}" aria-label="L 버튼"><span class="px" style="font-size: 16px; color: #FDFDFD">L</span></button>
@@ -212,8 +217,8 @@ button{font-family:inherit;cursor:pointer;color:inherit}
 <div style="position: absolute; inset: 0; background: #1E1B24; color: #FDFDFD; animation: fade .3s both">
 <canvas ref="{{setCanvas}}" tabIndex="0" aria-label="업무 부수기 게임. 십자키나 마우스로 받침대를 움직이고 A로 발사해요." onPointerMove="{{aim}}" onClick="{{launch}}" onKeyDown="{{key}}" style="position: absolute; left: 0; top: 0; width: 760px; height: 428px; display: block; cursor: none; outline: none; touch-action: none"></canvas>
 <div style="position: absolute; left: 0; right: 0; top: 0; height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; color: #FDFDFD; pointer-events: none" class="px"><span class="lf"><sc-for list="{{lifeDots}}" as="ld" hint-placeholder-count="3"><i class="{{ld.on}}"></i></sc-for></span><span style="font-size: 18px">{{pts}}</span><span style="font-size: 8px; color: #8A8794">B · HOME</span></div>
-<sc-if value="{{isReady}}" hint-placeholder-val="{{true}}"><p class="px blink" style="position: absolute; left: 0; right: 0; top: 270px; margin: 0; text-align: center; font-size: 12px; color: #C5F656; pointer-events: none">PRESS A</p></sc-if>
-<sc-if value="{{isOver}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: rgba(11,11,16,.82); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #FDFDFD"><p class="px" style="margin: 0; font-size: 26px; color: #FF8FE0">GAME OVER</p><p style="margin: 0; font-size: 17px; font-weight: 800">업무 {{score}}개를 부쉈어요</p><p class="px blink" style="margin: 0; font-size: 10px; color: #C5F656">A: RETRY · B: HOME</p></div></sc-if>
+<sc-if value="{{isReady}}" hint-placeholder-val="{{true}}"><p class="blink" style="position: absolute; left: 0; right: 0; top: 262px; margin: 0; text-align: center; font-size: 20px; font-weight: 800; color: #C5F656; pointer-events: none">화면을 클릭해 주세요!</p></sc-if>
+<sc-if value="{{isOver}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: rgba(11,11,16,.82); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #FDFDFD"><p class="px" style="margin: 0; font-size: 26px; color: #FF8FE0">GAME OVER</p><p style="margin: 0; font-size: 17px; font-weight: 800">업무 {{score}}개를 부쉈어요</p><p class="blink" style="margin: 0; font-size: 15px; font-weight: 800; color: #C5F656">화면을 클릭하면 다시 시작 · B 홈</p></div></sc-if>
 <sc-if value="{{isClear}}" hint-placeholder-val="{{false}}"><div class="clr" style="--u: 0.72" onClick="{{launch}}"><img class="bg" src="../game-assets/img/211ad2de8a1d6a97bf00319fa3c2709c.jpg" alt="파란 하늘과 초록 언덕, 멀리 도시가 보이는 길"><span class="ht"></span><div class="run"><img src="../game-assets/img/cc5759815a6da28c3ab34851fae3faf6.png" alt="땡땡이 캐릭터가 신나게 뛰어나와요"></div><div class="ttl"><p class="ey">STAGE CLEAR</p><p class="cpill"><span style="animation-delay: 2.3s">이</span><span style="animation-delay: 2.38s">제</span><span class="sp"></span><span style="animation-delay: 2.5s">놀</span><span style="animation-delay: 2.58s">자</span><span style="animation-delay: 2.66s">!</span></p></div><div class="again"><button class="ag1" onClick="{{againBtn}}">↻ 다시 하기</button><button class="ag2" onClick="{{toMenu}}">홈으로</button></div></div></sc-if>
 </div>
 </sc-if>
@@ -319,7 +324,7 @@ class Component extends DCLogic {
     this.press('aDown'); var m=this.state.mode;
     if(m==='home'){ this.beep(880,0.06); this.beep(1175,0.12,'square',0.07); if(this.state.sel===0) this.setState({mode:'view',st:0,sl:0}); else this.setState({mode:'game',score:0,lives:3,status:'ready'}); }
     else if(m==='view'){ this.step(1); }
-    else if(m==='game'){ var st=this.state.status; if(st==='ready') this.serve(); else if(st==='over'||st==='clear') this.restart(); this.beep(740,0.05); }
+    else if(m==='game'){ /* 게임은 화면 클릭으로만 시작 */ }
   }
   B(){ this.press('bDown'); var m=this.state.mode; if(m==='view'||m==='game'){ this.setState({mode:'home',sel:m==='game'?1:0}); this.beep(392,0.08); this.beep(330,0.1,'square',0.08); } }
   initGame(){
@@ -453,6 +458,7 @@ class Component extends DCLogic {
       clock:s.clock, sel0:s.sel===0?'sel':'', sel1:s.sel===1?'sel':'',
       pick0:function(){ if(self.state.sel===0) self.A(); else { self.setState({sel:0}); self.beep(660,0.04); } },
       pick1:function(){ if(self.state.sel===1) self.A(); else { self.setState({sel:1}); self.beep(660,0.04); } },
+      guide:(({off:[['POWER','위쪽 스위치를 올려 전원을 켜요']],boot:[],home:[['◀ ▶','카드를 골라요'],['A','선택해서 시작해요']],view:[['◀ ▶','화면 넘기기'],['A','다음 화면'],['B','홈으로']],game:[['◀ ▶ · 마우스','받침대 이동'],['클릭','공 발사'],['B','홈으로']]})[m]||[]).map(function(x){ return {k:x[0],t:x[1]}; }),
       chips:ST.map(function(x,i){ return {n:i+1,title:x.title,on:i===s.st?'on':'',pick:function(){ self.setState({st:i,sl:0}); self.beep(660,0.04); }}; }),
       st:{n:st.n,title:st.title,desc:st.desc},
       sv:{img:st.slides[s.sl].img,alt:st.slides[s.sl].alt,phone:!st.slides[s.sl].watch,watch:!!st.slides[s.sl].watch},
