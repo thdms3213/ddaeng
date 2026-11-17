@@ -437,6 +437,9 @@ body{background:var(--outer);font-family:Pretendard Variable,Pretendard,"Apple S
 .sns{height:56px;border-radius:var(--r-full);border:0;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-size:16px;font-weight:600;cursor:pointer;transition:transform .1s}
 .sns:active{transform:scale(.98)}
 .locmap{position:relative;border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;background:#F7F7F7}
+.locmap .osm{position:absolute;inset:0;overflow:hidden;background:#EDEDED}
+.locmap .osm img{position:absolute;width:256px;height:256px;max-width:none;opacity:0;transition:opacity .4s;user-select:none}
+.locmap .osm img.ld{opacity:1}
 .locmap .mapsvg{position:absolute;left:-30px;top:-170px;width:393px;height:720px;transition:transform .7s cubic-bezier(.3,1,.4,1)}
 .me-dot{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;opacity:0}
 .me-dot.on{opacity:1}
