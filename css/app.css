@@ -697,8 +697,21 @@ html.ios-standalone{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0p
 #wProg{transition:stroke-dashoffset .25s linear}
 .wmsg span{display:inline-block;animation:wglow 2.4s ease-in-out infinite}
 @keyframes wglow{0%,100%{filter:none}50%{filter:drop-shadow(0 0 6px rgba(197,246,86,.55))}}
-.wtoast{animation:wtoastin .35s cubic-bezier(.3,1.4,.5,1) backwards}
-@keyframes wtoastin{from{opacity:0;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
+.wtoast{animation:wtoastin .38s cubic-bezier(.22,.9,.3,1) both;will-change:transform,opacity;backface-visibility:hidden}
+.wtoast.out{animation:wtoastout .32s ease-in forwards}
+@keyframes wtoastout{to{opacity:0;transform:translateY(10px)}}
+@keyframes wtoastin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .wball,.wface{animation:wbob 2.8s ease-in-out infinite}
 @keyframes wbob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(2deg)}}
-@media (prefers-reduced-motion:reduce){.wv>*,.wenter,.wradar,.rdot,.wmsg span,.wball,.wface,.wtoast{animation:none!important}}
+/* 구역 이탈 · 연결 끊김 탱탱볼 */
+.wwarn,.wdisc{width:44px;height:44px;transform-origin:50% 100%}
+.wwarn{animation:wshake 1.9s ease-in-out infinite!important}
+@keyframes wshake{0%,40%,100%{transform:translate(0,0) rotate(0)}8%{transform:translate(-4px,0) rotate(-9deg)}16%{transform:translate(4px,-3px) rotate(9deg)}24%{transform:translate(-3px,0) rotate(-6deg)}32%{transform:translate(3px,-2px) rotate(5deg)}}
+.wwarn::after,.wdisc::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid #C5F656;opacity:0;pointer-events:none}
+.wwarn::after{animation:walert 1.9s ease-out infinite}
+@keyframes walert{0%{opacity:.8;transform:scale(1)}70%,100%{opacity:0;transform:scale(1.7)}}
+.wdisc{animation:wdrift 4.2s ease-in-out infinite!important}
+@keyframes wdrift{0%,100%{transform:translate(0,0) rotate(-3deg);filter:saturate(1)}50%{transform:translate(3px,5px) rotate(5deg);filter:saturate(.55) brightness(.85)}}
+.wdisc::after{border:2px dashed #B8B8B8;animation:wlost 2.8s ease-out infinite}
+@keyframes wlost{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
+@media (prefers-reduced-motion:reduce){.wwarn::after,.wdisc::after{animation:none!important}.wv>*,.wenter,.wradar,.rdot,.wmsg span,.wball,.wface,.wtoast{animation:none!important}}
