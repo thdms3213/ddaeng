@@ -718,3 +718,5 @@ html.ios-standalone{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0p
 .wdisc::after{border:2px dashed #B8B8B8;animation:wlost 2.8s ease-out infinite}
 @keyframes wlost{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
 @media (prefers-reduced-motion:reduce){.wwarn::after,.wdisc::after{animation:none!important}.wv>*,.wenter,.wradar,.rdot,.wmsg span,.wball,.wface,.wtoast{animation:none!important}}
+
+.locbtn.busy .ms{animation:wsp .8s linear infinite}

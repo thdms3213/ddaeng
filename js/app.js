@@ -707,7 +707,7 @@ function renderNick(){ const s=document.getElementById('nick');
   inp.addEventListener('input',()=>upd(false)); inp.addEventListener('blur',()=>upd(true)); inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ upd(true); if(nickCheck(inp.value.trim()).ok) go('town'); } }); upd(false); }
 ACT.nickNext=()=>go('town');
 const ME_SVG='<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="6.7" fill="#4B50D9" stroke="#FDFDFD" stroke-width="1.7"/></svg>';
-function locMap(h){ return `<div class="locmap" style="height:${h}px"><img class="mapsvg" src="${MAP_URL}" alt="현재 위치 주변 지도"><span class="me-dot" id="meDot"><span class="ring"></span>${ME_SVG}</span><button class="locbtn" data-act="locate" aria-label="현재 위치 찾기" style="right:12px;bottom:12px">${I('my_location')}</button></div>`; }
+function locMap(h,act){ return `<div class="locmap" style="height:${h}px"><img class="mapsvg" src="${MAP_URL}" alt="현재 위치 주변 지도"><span class="me-dot" id="meDot"><span class="ring"></span>${ME_SVG}</span><button class="locbtn" data-act="${act||'locate'}" aria-label="현재 위치 찾기" style="right:12px;bottom:12px">${I('my_location')}</button></div>`; }
 /* ---- 실제 현재 위치 + OSM 타일 지도 ---- */
 const GEO={pos:null,town:null};
 function osmLayer(box,lat,lon,z){ z=z||17; const n=Math.pow(2,z)*256, x=(lon+180)/360*n, s=Math.sin(lat*Math.PI/180), y=(0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n, w=box.clientWidth||340, h=box.clientHeight||240;
@@ -719,12 +719,20 @@ function placeMe(box,dot){ if(!dot) return; if(GEO.pos) osmLayer(box,GEO.pos.lat
 function locate(){ const dot=document.querySelector('.screen.on #meDot'); if(!dot) return; const box=dot.parentNode, img=box.querySelector('.mapsvg');
   const show=()=>{ dot.classList.add('on'); if(!reduce) dot.querySelector('svg').animate([{transform:'scale(0)'},{transform:'scale(1.3)',offset:.6},{transform:'scale(1)'}],{duration:420,easing:'ease-out'}); buzz(10); };
   A.located=true;
+  const sel=store.get('town',null), onAuth=!!document.querySelector('.screen.on#townAuth');
+  if(onAuth&&sel&&sel.lat&&sel.lon){ osmLayer(box,sel.lat,sel.lon); setTimeout(show,250); return; }
   const fallback=()=>{ if(img) img.style.transform='translate(-8px,10px)'; setTimeout(show,350); };
   if(!navigator.geolocation){ fallback(); return; }
   navigator.geolocation.getCurrentPosition(p=>{ GEO.pos={lat:p.coords.latitude,lon:p.coords.longitude}; osmLayer(box,GEO.pos.lat,GEO.pos.lon); setTimeout(show,250);
       if(!GEO.town&&!GEO._ask){ GEO._ask=1; geoTown(GEO.pos.lat,GEO.pos.lon).then(t=>{ GEO.town=t;  }).catch(()=>{}); } },
     ()=>fallback(),{enableHighAccuracy:true,timeout:8000,maximumAge:30000}); }
+function addrSearch(q){ return fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&countrycodes=kr&accept-language=ko&q='+encodeURIComponent(q)).then(r=>r.json()).then(a=>a.map(o=>{ const d=o.address||{}; const dong=d.suburb||d.quarter||d.neighbourhood||d.village||d.town||d.city_district||d.city||d.county; if(!dong) return null; const full=[d.state||d.province,d.city||d.county,d.city_district,dong].filter((v,i,ar)=>v&&ar.indexOf(v)===i).join(' '); return [dong,full,(+o.lat).toFixed(5),(+o.lon).toFixed(5)]; }).filter(Boolean)); }
 function nearList(){ const base=NEAR.map(i=>TOWNS[i]); if(!GEO.town) return base; const t=[GEO.town.dong,GEO.town.full]; return [t].concat(base.filter(x=>x[0]!==t[0])); }
+ACT.locateTown=b=>{ const go1=()=>{ const btn=document.querySelector('.screen.on .locbtn'); if(btn) btn.classList.add('busy'); locate();
+    const fail=m=>{ if(btn) btn.classList.remove('busy'); toast(m); };
+    if(!navigator.geolocation) return fail('위치를 사용할 수 없어요. 동네 이름으로 검색해 주세요');
+    navigator.geolocation.getCurrentPosition(p=>{ const ll={lat:p.coords.latitude,lon:p.coords.longitude}; GEO.pos=ll; geoTown(ll.lat,ll.lon).then(t=>{ if(btn) btn.classList.remove('busy'); if(!t) return toast('동네를 찾지 못했어요. 이름으로 검색해 주세요'); GEO.town=t; store.set('town',{dong:t.dong,full:t.full,lat:ll.lat,lon:ll.lon}); buzz([10,30,10]); toast(t.dong+'(으)로 설정했어요'); setTimeout(()=>{ if(location.hash==='#town') go('townAuth'); },900); }).catch(()=>fail('동네를 찾지 못했어요. 이름으로 검색해 주세요')); },()=>fail('위치 권한을 허용해 주세요'),{enableHighAccuracy:true,timeout:8000,maximumAge:0}); };
+  if(!store.get('locAsked',false)){ locAlert(); const w=setInterval(()=>{ if(store.get('locAsked',false)){ clearInterval(w); go1(); } },300); return; } go1(); };
 ACT.locate=()=>{ if(!store.get('locAsked',false)){ locAlert(); const w=setInterval(()=>{ if(store.get('locAsked',false)){ clearInterval(w); locate(); } },300); return; } locate(); };
 const TOWNS=[
  ['개신동','충청북도 청주시 서원구 개신동'],['사창동','충청북도 청주시 서원구 사창동'],['모충동','충청북도 청주시 서원구 모충동'],['수곡동','충청북도 청주시 서원구 수곡동'],['산남동','충청북도 청주시 서원구 산남동'],['분평동','충청북도 청주시 서원구 분평동'],['성화동','충청북도 청주시 서원구 성화동'],['죽림동','충청북도 청주시 서원구 죽림동'],['미평동','충청북도 청주시 서원구 미평동'],['사직동','충청북도 청주시 서원구 사직동'],
@@ -739,25 +747,27 @@ function TN(){ return (store.get('town',null)||{dong:'개신동'}).dong; }
 function townRows(list,q){
   if(!list.length) return `<div style="padding:40px 0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px"><span class="ms" style="font-size:40px;color:var(--grey-300)">location_off</span><span class="t-body c2">'${esc(q)}' 검색 결과가 없어요</span><span class="t-cap c3">동 · 읍 · 면 이름으로 검색해 보세요</span></div>`;
   const hl=t=>{ if(!q) return esc(t); let o=esc(t); q.split(' ').filter(Boolean).forEach(w=>{ o=o.split(esc(w)).join('<b style="color:var(--purple-600)">'+esc(w)+'</b>'); }); return o; };
-  return list.map(([d,f],k)=>`<button class="townrow" data-act="townPick" data-i="${TOWNS.findIndex(x=>x[0]===d&&x[1]===f)}" data-d="${esc(d)}" data-f="${esc(f)}">${I('location_on')}<span style="flex:1;min-width:0"><span class="t-body" style="display:block;font-weight:600">${hl(d)}</span><span class="t-cap c3" style="display:block">${hl(f)}</span></span>${!q&&k===0?'<span class="pill-tag t-cap-b" style="background:var(--lime-500);color:#1A1A1A">현재 위치</span>':''}</button>`).join('');
+  return list.map(([d,f,la,lo],k)=>`<button class="townrow" data-act="townPick" data-i="${TOWNS.findIndex(x=>x[0]===d&&x[1]===f)}" data-d="${esc(d)}" data-f="${esc(f)}" data-lat="${la||''}" data-lon="${lo||''}">${I('location_on')}<span style="flex:1;min-width:0"><span class="t-body" style="display:block;font-weight:600">${hl(d)}</span><span class="t-cap c3" style="display:block">${hl(f)}</span></span>${!q&&k===0?'<span class="pill-tag t-cap-b" style="background:var(--lime-500);color:#1A1A1A">현재 위치</span>':''}</button>`).join('');
 }
 function renderTown(){ const s=document.getElementById('town');
-  s.innerHTML=topbar('동네 설정')+steps(2)+`<div class="ahead"><h2>어느 동네에서<br>놀아볼까요?</h2><p>현재 위치를 확인하고 활동할 동네를 선택해주세요.</p></div><div style="padding:24px 24px 32px;display:flex;flex-direction:column;gap:16px"><label class="field" style="min-height:48px">${I('search')}<input id="townQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="동네 이름을 검색해주세요" style="font-size:14px"><button class="townclr" data-act="townClr" aria-label="검색어 지우기" hidden><span class="ms" style="font-size:18px">cancel</span></button></label><div id="townMap">${locMap(240)}</div><div style="display:flex;flex-direction:column;gap:8px"><span class="t-cap c3" id="townCap"></span><div id="townList" style="display:flex;flex-direction:column;gap:8px"></div></div></div>`;
+  s.innerHTML=topbar('동네 설정')+steps(2)+`<div class="ahead"><h2>어느 동네에서<br>놀아볼까요?</h2><p>현재 위치를 확인하고 활동할 동네를 선택해주세요.</p></div><div style="padding:24px 24px 32px;display:flex;flex-direction:column;gap:16px"><label class="field" style="min-height:48px">${I('search')}<input id="townQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="동네 이름을 검색해주세요" style="font-size:14px"><button class="townclr" data-act="townClr" aria-label="검색어 지우기" hidden><span class="ms" style="font-size:18px">cancel</span></button></label><div id="townMap">${locMap(240,'locateTown')}</div><div style="display:flex;flex-direction:column;gap:8px"><span class="t-cap c3" id="townCap"></span><div id="townList" style="display:flex;flex-direction:column;gap:8px"></div></div></div>`;
   const inp=s.querySelector('#townQ'), list=s.querySelector('#townList'), cap=s.querySelector('#townCap'), map=s.querySelector('#townMap'), clr=s.querySelector('.townclr');
   inp.addEventListener('input',()=>{ const q=inp.value.trim().replace(/\s+/g,' ');
     clr.hidden=!q; map.style.display=q?'none':'';
     if(!q){ cap.textContent=''; list.innerHTML=''; return; }
     const tk=q.split(' '), r=TOWNS.filter(([d,f])=>tk.every(t=>(d+' '+f).includes(t))).sort((a,b)=>(b[0].startsWith(tk[0])?1:0)-(a[0].startsWith(tk[0])?1:0));
-    cap.textContent=r.length?`검색 결과 ${r.length}개`:'검색 결과'; list.innerHTML=townRows(r,q); });
+    cap.textContent=r.length?`검색 결과 ${r.length}개`:'검색 결과'; list.innerHTML=townRows(r,q);
+    clearTimeout(inp._t); const my=++inp._n||(inp._n=1); inp._t=setTimeout(()=>{ addrSearch(q).then(res=>{ if(inp.value.trim().replace(/\s+/g,' ')!==q) return; const seen=new Set(r.map(x=>x[1])); const add=res.filter(x=>!seen.has(x[1])); const all=r.concat(add); cap.textContent=all.length?`검색 결과 ${all.length}개`:'검색 결과'; list.innerHTML=townRows(all,q); }).catch(()=>{}); },380); });
   inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const f=list.querySelector('.townrow'); if(f) f.click(); } });
   setTimeout(()=>ACT.locate(),500); }
 ACT.townClr=()=>{ const inp=document.getElementById('townQ'); inp.value=''; inp.dispatchEvent(new Event('input')); inp.focus(); };
-ACT.townPick=b=>{ if(b.classList.contains('on')) return; const t=+b.dataset.i>=0?TOWNS[+b.dataset.i]:[b.dataset.d,b.dataset.f]; store.set('town',{dong:t[0],full:t[1]});
+ACT.townPick=b=>{ if(b.classList.contains('on')) return; const t=+b.dataset.i>=0?TOWNS[+b.dataset.i]:[b.dataset.d,b.dataset.f]; store.set('town',{dong:t[0],full:t[1],lat:+b.dataset.lat||null,lon:+b.dataset.lon||null});
   b.parentNode.querySelectorAll('.townrow').forEach(x=>x.classList.remove('on')); b.classList.add('on'); buzz(8);
   const a=document.activeElement; if(a&&a.blur) a.blur(); setTimeout(()=>go('townAuth'),260); };
 ACT.townNext=()=>go('townAuth');
 function renderTownAuth(){ const s=document.getElementById('townAuth');
   s.innerHTML=topbar('동네 설정')+steps(2)+`<div class="ahead"><h2>어느 동네에서<br>놀아볼까요?</h2><p>현재 위치를 확인하고 활동할 동네를 선택해주세요.</p></div><div style="padding:24px 24px 16px;display:flex;flex-direction:column;gap:16px"><div class="card" style="box-shadow:none;display:flex;align-items:center;justify-content:space-between;padding:8px 9px 8px 12px"><span class="row t-head" style="gap:4px">${I('location_on')}${TN()}</span><button class="btn" data-act="townChange" style="width:auto;height:36px;padding:0 16px;font-size:14px;background:#1A1A1A;color:#FDFDFD;border-radius:8px">변경</button></div>${locMap(330)}</div><div class="afoot"><button class="btn primary" data-act="townAuth">동네인증 완료하기</button></div>`;
+  const tw=store.get('town',null); if(tw&&!tw.lat){ addrSearch(tw.full||tw.dong).then(r=>{ if(r[0]){ store.set('town',Object.assign({},tw,{lat:+r[0][2],lon:+r[0][3]})); if(location.hash==='#townAuth') locate(); } }).catch(()=>{}); }
   setTimeout(locate,300); }
 ACT.townChange=()=>goBack();
 ACT.townAuth=b=>{ if(A.failTown){ A.failTown=false; return dialog({title:'동네 인증에 실패했어요',body:'현재 위치가 '+TN()+'이 아니에요.\n'+TN()+'에서 다시 시도해 주세요.',face:'07',color:'sky',buttons:[{label:'확인',primary:true}]}); }
