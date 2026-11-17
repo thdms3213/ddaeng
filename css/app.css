@@ -112,10 +112,16 @@ body{background:var(--outer);font-family:Pretendard Variable,Pretendard,"Apple S
 .status-card .l{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;align-items:flex-start}
 .dday{width:72px;height:72px;flex:none;border-radius:50%;background:var(--lime-500);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600}
 .content{padding:32px 24px calc(env(safe-area-inset-bottom,0px) + 120px);display:flex;flex-direction:column;gap:40px}
-.rec-card{display:flex;justify-content:space-between;padding:20px 0 0 20px;overflow:hidden;cursor:pointer;height:142px}
+.rec-card{display:flex;justify-content:space-between;padding:20px 0 0 20px;overflow:hidden;cursor:pointer;height:212px;transition:transform .18s ease}
+.rec-card:active{transform:scale(.98)}
+.rec-card>div:first-child{display:flex;flex-direction:column;padding-bottom:20px}
+.rec-go{margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:2px;height:32px;padding:0 8px 0 14px;border-radius:16px;background:var(--purple-50);color:var(--purple-600);font-size:14px;font-weight:600}
+.rec-go .ms{font-size:20px}
 .rec-card .num{display:flex;align-items:flex-end;gap:4px}
-.mini{position:relative;width:150px;height:120px;flex:none}
-.mini .ball{position:absolute}
+.mini{position:relative;width:172px;height:190px;flex:none;margin-right:8px}
+.mini .ball{position:absolute;animation:ballroll var(--dur,4s) ease-in-out var(--dl,0s) infinite alternate;will-change:transform}
+@keyframes ballroll{from{transform:translateX(calc(var(--dx,3px)*-1)) rotate(calc(var(--rot,8deg)*-1))}to{transform:translateX(var(--dx,3px)) rotate(var(--rot,8deg))}}
+@media (prefers-reduced-motion:reduce){.mini .ball{animation:none}}
 .dogam{padding:20px;display:flex;flex-direction:column;gap:20px}
 .dogam .grid{display:grid;grid-template-columns:repeat(4,1fr);row-gap:20px}
 .play{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;padding:0;font:inherit;cursor:pointer;color:inherit}
@@ -672,3 +678,27 @@ html.ios-standalone{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0p
 .wenter::before,.wb.p::before,.wl.p i::before,.wc.p::before{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 15.5px rgba(255,255,255,.62);mix-blend-mode:plus-lighter;z-index:-1;pointer-events:none}
 .wl.p i{position:relative}
 .wb.p{position:absolute}
+
+/* ===== 워치 모션 ===== */
+.wv>*:not(.wh):not(.wenter):not(.wradar){animation:wrise .46s cubic-bezier(.2,.9,.3,1) backwards;animation-delay:calc(var(--n,0)*55ms + 40ms)}
+.wv>*:nth-child(3){--n:1}.wv>*:nth-child(4){--n:2}.wv>*:nth-child(5){--n:3}.wv>*:nth-child(6){--n:4}.wv>*:nth-child(7){--n:5}.wv>*:nth-child(8){--n:6}
+@keyframes wrise{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.wenter{animation:wbreath 2.2s ease-in-out 0.6s infinite,wpop .6s cubic-bezier(.3,1.5,.5,1) backwards}
+@keyframes wpop{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:none}}
+.wenter:active{transform:scale(.92);transition:transform .12s}
+.wb,.wl i,.wc,.wcard,.wtile{transition:transform .28s cubic-bezier(.3,1.6,.5,1),background .12s,filter .12s}
+.wb:active,.wcard:active,.wtile:active{transform:scale(.95);transition-duration:.08s}
+.wl:active i,.wc:active{transform:scale(.88);transition-duration:.08s}
+.wback{transition:transform .2s cubic-bezier(.3,1.6,.5,1)}.wback:active{transform:translateX(-3px) scale(.9)}
+.wradar{animation:wpop .5s cubic-bezier(.3,1.3,.5,1) backwards}
+.rdot{transform-box:fill-box;transform-origin:center;animation:rdotin .5s cubic-bezier(.3,1.8,.5,1) backwards,rdotfloat 3.6s ease-in-out infinite;animation-delay:calc(var(--i)*90ms + 200ms),calc(var(--i)*-.7s)}
+@keyframes rdotin{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+@keyframes rdotfloat{0%,100%{transform:translate(0,0)}33%{transform:translate(1.2px,-1.4px)}66%{transform:translate(-1.2px,1px)}}
+#wProg{transition:stroke-dashoffset .25s linear}
+.wmsg span{display:inline-block;animation:wglow 2.4s ease-in-out infinite}
+@keyframes wglow{0%,100%{filter:none}50%{filter:drop-shadow(0 0 6px rgba(197,246,86,.55))}}
+.wtoast{animation:wtoastin .35s cubic-bezier(.3,1.4,.5,1) backwards}
+@keyframes wtoastin{from{opacity:0;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
+.wball,.wface{animation:wbob 2.8s ease-in-out infinite}
+@keyframes wbob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-3px) rotate(2deg)}}
+@media (prefers-reduced-motion:reduce){.wv>*,.wenter,.wradar,.rdot,.wmsg span,.wball,.wface,.wtoast{animation:none!important}}
