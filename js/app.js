@@ -440,11 +440,11 @@ function renderExplore(){ const s=document.getElementById('explore'); const q=C.
   if(!store.get('locAsked',false)) setTimeout(()=>{ if((location.hash||'').slice(1)==='explore'&&!store.get('locAsked',false)) locAlert(); },700); }
 /* iOS permission alerts, built from the Figma "iOS / Permission Alert" variants: Location (map preview) · Two Buttons · Photos */
 function iosAsk(type,o,cb){ const a=$('#iosAlert'); const btn=(l,v,b)=>`<button data-v="${v}"${b?' style="font-weight:600"':''}>${l}</button>`;
-  let h=`<div class="c"><h4>${o.title}</h4><p>${o.body}</p>${type==='loc'?`<div class="ios-map"><img class="mapsvg" src="${MAP_URL}" alt=""><span class="ios-lab">정확한 위치: 켬</span><span class="ios-pill"><i></i>충북대 정문</span><span class="ios-dot"></span></div>`:''}</div>`;
+  let h=`<div class="c"><h4>${o.title}</h4><p>${o.body}</p>${type==='loc'?`<div class="ios-map"><span class="ios-lab">정확한 위치: 켬</span><span class="ios-dot"></span></div>`:''}</div>`;
   if(type==='loc') h+=`<div class="bv">${btn('한 번 허용','once')}${btn('앱을 사용하는 동안 허용','app')}${btn('허용 안 함','no')}</div>`;
   else if(type==='photo') h+=`<div class="bv">${btn('사진 선택...','pick')}${btn('모든 사진에 대한 접근 허용','all')}${btn('허용 안 함','no')}</div>`;
   else h+=`<div class="b">${btn('허용 안 함','no')}${btn('허용','yes',true)}</div>`;
-  a.innerHTML=h; a.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ closeLayer(a); buzz(6); cb&&cb(b.dataset.v); })); openLayer(a,{ios:true}); }
+  a.innerHTML=h; a.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ closeLayer(a); buzz(6); cb&&cb(b.dataset.v); })); openLayer(a,{ios:true}); if(type==='loc'){ const mb=a.querySelector('.ios-map'); if(mb) requestAnimationFrame(()=>mapView(mb,GEO.pos||DEF_POS,null,null,17)); } }
 function locAlert(){ iosAsk('loc',{title:"'땡땡이'이(가) 사용자의 위치를 사용하도록 허용하겠습니까?",body:'가까운 놀이 장소와 모임을 찾기 위해 위치 정보를 사용해요.'},v=>{ store.set('locAsked',true); store.set('locDenied',v==='no'); if(v!=='no') setTimeout(()=>toast('내 주변 놀이 장소를 보여드릴게요'),250); }); }
 function askNotif(){ iosAsk('two',{title:"'땡땡이'에서 알림을 보내고자 합니다",body:'경고, 사운드 및 아이콘 배지가 알림에 포함될 수 있습니다. 설정에서 이를 구성할 수 있습니다.'},v=>{ store.set('notifAsked',true); if(v==='yes') setTimeout(()=>toast('알림을 받을 수 있어요'),250); }); }
 function restoreNotif(){}
@@ -712,16 +712,31 @@ function locMap(h,act){ return `<div class="locmap" style="height:${h}px"><img c
 const GEO={pos:null,town:null};
 const DEF_POS={lat:36.6296,lon:127.4561};
 function wpx(lat,lon,z){ const n=Math.pow(2,z)*256, s=Math.sin(lat*Math.PI/180); return [(lon+180)/360*n,(0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n]; }
-function osmLayer(box,lat,lon,z){ z=z||17; const [x,y]=wpx(lat,lon,z), w=box.clientWidth||340, h=box.clientHeight||240;
-  let L=box.querySelector('.osm'); if(!L){ L=document.createElement('div'); L.className='osm'; box.insertBefore(L,box.firstChild); } L.innerHTML='';
-  for(let tx=Math.floor((x-w/2)/256); tx<=Math.floor((x+w/2)/256); tx++) for(let ty=Math.floor((y-h/2)/256); ty<=Math.floor((y+h/2)/256); ty++){ const im=new Image(); im.alt=''; im.draggable=false; im.style.cssText=`left:${(tx*256-x+w/2).toFixed(1)}px;top:${(ty*256-y+h/2).toFixed(1)}px`; im.onload=()=>im.classList.add('ld'); im.src=`https://tile.openstreetmap.org/${z}/${tx}/${ty}.png`; L.appendChild(im); }
+function unpx(x,y,z){ const n=Math.pow(2,z)*256; return {lon:x/n*360-180,lat:Math.atan(Math.sinh(Math.PI*(1-2*y/n)))*180/Math.PI}; }
+/* 회색 OSM 지도: 드래그 · 핀치/휠 확대 · 더블탭 확대 */
+function mapDraw(box){ const m=box._m; if(!m) return; const w=box.clientWidth||340, h=box.clientHeight||240, zi=Math.max(3,Math.min(19,Math.round(m.z))), s=Math.pow(2,m.z-zi), nt=Math.pow(2,zi), [x,y]=wpx(m.lat,m.lon,zi);
+  let L=box.querySelector('.osm'); if(!L){ L=document.createElement('div'); L.className='osm'; box.insertBefore(L,box.firstChild); L._c=new Map(); }
   const old=box.querySelector('.mapsvg'); if(old) old.style.display='none';
-  return {x,y,w,h,z}; }
-/* 지도 중심 + 내 위치 점 + (선택한 동네 핀) 배치 */
-function mapView(box,center,me,sel){ const dot=box.querySelector('#meDot'), v=osmLayer(box,center.lat,center.lon);
-  const put=(el,p,mx,my)=>{ const [px,py]=wpx(p.lat,p.lon,v.z); el.style.left=(v.w/2+px-v.x+mx)+'px'; el.style.top=(v.h/2+py-v.y+my)+'px'; };
-  if(dot&&me) put(dot,me,0,0);
-  let pin=box.querySelector('.sel-pin'); if(sel){ if(!pin){ pin=document.createElement('span'); pin.className='sel-pin'; pin.innerHTML='<span class="ms">location_on</span>'; box.appendChild(pin); } put(pin,sel,0,0); } else if(pin) pin.remove(); }
+  const need=new Set(), ts=(256*s+0.7).toFixed(1)+'px';
+  for(let tx=Math.floor((x-w/2/s)/256); tx<=Math.floor((x+w/2/s)/256); tx++) for(let ty=Math.floor((y-h/2/s)/256); ty<=Math.floor((y+h/2/s)/256); ty++){ if(ty<0||ty>=nt) continue; const wx=((tx%nt)+nt)%nt, key=zi+'/'+wx+'/'+ty+'@'+tx; need.add(key); let im=L._c.get(key);
+    if(!im){ im=new Image(); im.alt=''; im.draggable=false; im.onload=()=>im.classList.add('ld'); im.src=`https://tile.openstreetmap.org/${zi}/${wx}/${ty}.png`; L.appendChild(im); L._c.set(key,im); }
+    im.style.left=((tx*256-x)*s+w/2).toFixed(1)+'px'; im.style.top=((ty*256-y)*s+h/2).toFixed(1)+'px'; im.style.width=im.style.height=ts; }
+  L._c.forEach((im,k)=>{ if(!need.has(k)){ im.remove(); L._c.delete(k); } });
+  const put=(el,p)=>{ const [px,py]=wpx(p.lat,p.lon,zi); el.style.left=(w/2+(px-x)*s)+'px'; el.style.top=(h/2+(py-y)*s)+'px'; };
+  const dot=box.querySelector('#meDot'); if(dot&&m.me) put(dot,m.me);
+  let pin=box.querySelector('.sel-pin'); if(m.sel){ if(!pin){ pin=document.createElement('span'); pin.className='sel-pin'; pin.innerHTML='<span class="ms">location_on</span>'; box.appendChild(pin); } put(pin,m.sel); } else if(pin) pin.remove(); }
+function mapView(box,center,me,sel,z){ const m=box._m||(box._m={z:17}); m.lat=center.lat; m.lon=center.lon; m.me=me; m.sel=sel; if(z) m.z=z; mapDraw(box); if(box.classList.contains('locmap')) bindMap(box); }
+function bindMap(box){ if(box._b) return; box._b=1; box.style.touchAction='none'; box.classList.add('drag'); const P=new Map(); let pd=0, raf=0; const draw=()=>{ if(!raf) raf=requestAnimationFrame(()=>{ raf=0; mapDraw(box); }); };
+  const dist=()=>{ const a=[...P.values()]; return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1; };
+  box.addEventListener('pointerdown',e=>{ if(e.target.closest('button')) return; P.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{ box.setPointerCapture(e.pointerId); }catch(_){} pd=P.size===2?dist():0; });
+  box.addEventListener('pointermove',e=>{ const p=P.get(e.pointerId); if(!p||!box._m) return; const m=box._m;
+    if(P.size===1){ const zi=Math.max(3,Math.min(19,Math.round(m.z))), s=Math.pow(2,m.z-zi), [x,y]=wpx(m.lat,m.lon,zi), c=unpx(x-(e.clientX-p.x)/s,y-(e.clientY-p.y)/s,zi); m.lat=Math.max(-80,Math.min(80,c.lat)); m.lon=c.lon; p.x=e.clientX; p.y=e.clientY; }
+    else if(P.size===2){ p.x=e.clientX; p.y=e.clientY; const d=dist(); m.z=Math.max(3,Math.min(19,m.z+Math.log2(d/(pd||d)))); pd=d; }
+    draw(); });
+  const up=e=>{ P.delete(e.pointerId); pd=P.size===2?dist():0; };
+  box.addEventListener('pointerup',up); box.addEventListener('pointercancel',up);
+  box.addEventListener('wheel',e=>{ e.preventDefault(); const m=box._m; if(!m) return; m.z=Math.max(3,Math.min(19,m.z-e.deltaY*0.0015)); draw(); },{passive:false});
+  box.addEventListener('dblclick',e=>{ if(e.target.closest('button')) return; const m=box._m; if(!m) return; m.z=Math.min(19,Math.round(m.z)+1); draw(); }); }
 function geoTown(lat,lon){ return fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=16&accept-language=ko&lat=${lat}&lon=${lon}`).then(r=>r.json()).then(d=>{ const a=d.address||{}; const dong=a.suburb||a.quarter||a.neighbourhood||a.village||a.town||a.city_district||a.city; if(!dong) return null; const full=[a.state||a.province,a.city||a.county,a.city_district,dong].filter((v,i,ar)=>v&&ar.indexOf(v)===i).join(' '); return {dong,full,names:[a.suburb,a.quarter,a.neighbourhood,a.village,a.town,a.city_district].filter(Boolean)}; }); }
 function locate(opt){ const dot=document.querySelector('.screen.on #meDot'); if(!dot) return; const box=dot.parentNode; const wantMe=!!(opt&&opt.me);
   const sel=store.get('town',null), onAuth=!!document.querySelector('.screen.on#townAuth'), selPos=(onAuth&&sel&&sel.lat&&sel.lon)?{lat:sel.lat,lon:sel.lon}:null;
@@ -759,7 +774,7 @@ function townRows(list,q){
   return list.map(([d,f,la,lo],k)=>`<button class="townrow" data-act="townPick" data-i="${TOWNS.findIndex(x=>x[0]===d&&x[1]===f)}" data-d="${esc(d)}" data-f="${esc(f)}" data-lat="${la||''}" data-lon="${lo||''}">${I('location_on')}<span style="flex:1;min-width:0"><span class="t-body" style="display:block;font-weight:600">${hl(d)}</span><span class="t-cap c3" style="display:block">${hl(f)}</span></span>${!q&&k===0?'<span class="pill-tag t-cap-b" style="background:var(--lime-500);color:#1A1A1A">현재 위치</span>':''}</button>`).join('');
 }
 function renderTown(){ const s=document.getElementById('town');
-  s.innerHTML=topbar('동네 설정')+steps(2)+`<div class="ahead"><h2>어느 동네에서<br>놀아볼까요?</h2><p>현재 위치를 확인하고 활동할 동네를 선택해주세요.</p></div><div style="padding:24px 24px 32px;display:flex;flex-direction:column;gap:16px"><label class="field" style="min-height:48px">${I('search')}<input id="townQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="동네 이름을 검색해주세요" style="font-size:14px"><button class="townclr" data-act="townClr" aria-label="검색어 지우기" hidden><span class="ms" style="font-size:18px">cancel</span></button></label><div id="townMap">${locMap(240,'locateTown')}</div><div style="display:flex;flex-direction:column;gap:8px"><span class="t-cap c3" id="townCap"></span><div id="townList" style="display:flex;flex-direction:column;gap:8px"></div></div></div>`;
+  s.innerHTML=topbar('동네 설정')+steps(2)+`<div class="ahead"><h2>어느 동네에서<br>놀아볼까요?</h2><p>현재 위치를 확인하고 활동할 동네를 선택해주세요.</p></div><div style="padding:24px 24px 32px;display:flex;flex-direction:column;gap:16px"><label class="field" style="min-height:48px">${I('search')}<input id="townQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="동네 이름을 검색해주세요" style="font-size:14px"><button class="townclr" data-act="townClr" aria-label="검색어 지우기" hidden><span class="ms" style="font-size:18px">cancel</span></button></label><div id="townMap">${locMap(330,'locateTown')}</div><div style="display:flex;flex-direction:column;gap:8px"><span class="t-cap c3" id="townCap"></span><div id="townList" style="display:flex;flex-direction:column;gap:8px"></div></div></div>`;
   const inp=s.querySelector('#townQ'), list=s.querySelector('#townList'), cap=s.querySelector('#townCap'), map=s.querySelector('#townMap'), clr=s.querySelector('.townclr');
   inp.addEventListener('input',()=>{ const q=inp.value.trim().replace(/\s+/g,' ');
     clr.hidden=!q; map.style.display=q?'none':'';
