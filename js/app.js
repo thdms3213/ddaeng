@@ -710,22 +710,29 @@ const ME_SVG='<svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"
 function locMap(h,act){ return `<div class="locmap" style="height:${h}px"><img class="mapsvg" src="${MAP_URL}" alt="현재 위치 주변 지도"><span class="me-dot" id="meDot"><span class="ring"></span>${ME_SVG}</span><button class="locbtn" data-act="${act||'locate'}" aria-label="현재 위치 찾기" style="right:12px;bottom:12px">${I('my_location')}</button></div>`; }
 /* ---- 실제 현재 위치 + OSM 타일 지도 ---- */
 const GEO={pos:null,town:null};
-function osmLayer(box,lat,lon,z){ z=z||17; const n=Math.pow(2,z)*256, x=(lon+180)/360*n, s=Math.sin(lat*Math.PI/180), y=(0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n, w=box.clientWidth||340, h=box.clientHeight||240;
+const DEF_POS={lat:36.6296,lon:127.4561};
+function wpx(lat,lon,z){ const n=Math.pow(2,z)*256, s=Math.sin(lat*Math.PI/180); return [(lon+180)/360*n,(0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*n]; }
+function osmLayer(box,lat,lon,z){ z=z||17; const [x,y]=wpx(lat,lon,z), w=box.clientWidth||340, h=box.clientHeight||240;
   let L=box.querySelector('.osm'); if(!L){ L=document.createElement('div'); L.className='osm'; box.insertBefore(L,box.firstChild); } L.innerHTML='';
   for(let tx=Math.floor((x-w/2)/256); tx<=Math.floor((x+w/2)/256); tx++) for(let ty=Math.floor((y-h/2)/256); ty<=Math.floor((y+h/2)/256); ty++){ const im=new Image(); im.alt=''; im.draggable=false; im.style.cssText=`left:${(tx*256-x+w/2).toFixed(1)}px;top:${(ty*256-y+h/2).toFixed(1)}px`; im.onload=()=>im.classList.add('ld'); im.src=`https://tile.openstreetmap.org/${z}/${tx}/${ty}.png`; L.appendChild(im); }
-  const old=box.querySelector('.mapsvg'); if(old) old.style.display='none'; }
+  const old=box.querySelector('.mapsvg'); if(old) old.style.display='none';
+  return {x,y,w,h,z}; }
+/* 지도 중심 + 내 위치 점 + (선택한 동네 핀) 배치 */
+function mapView(box,center,me,sel){ const dot=box.querySelector('#meDot'), v=osmLayer(box,center.lat,center.lon);
+  const put=(el,p,mx,my)=>{ const [px,py]=wpx(p.lat,p.lon,v.z); el.style.left=(v.w/2+px-v.x+mx)+'px'; el.style.top=(v.h/2+py-v.y+my)+'px'; };
+  if(dot&&me) put(dot,me,0,0);
+  let pin=box.querySelector('.sel-pin'); if(sel){ if(!pin){ pin=document.createElement('span'); pin.className='sel-pin'; pin.innerHTML='<span class="ms">location_on</span>'; box.appendChild(pin); } put(pin,sel,0,0); } else if(pin) pin.remove(); }
 function geoTown(lat,lon){ return fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=16&accept-language=ko&lat=${lat}&lon=${lon}`).then(r=>r.json()).then(d=>{ const a=d.address||{}; const dong=a.suburb||a.quarter||a.neighbourhood||a.village||a.town||a.city_district||a.city; if(!dong) return null; const full=[a.state||a.province,a.city||a.county,a.city_district,dong].filter((v,i,ar)=>v&&ar.indexOf(v)===i).join(' '); return {dong,full,names:[a.suburb,a.quarter,a.neighbourhood,a.village,a.town,a.city_district].filter(Boolean)}; }); }
-function placeMe(box,dot){ if(!dot) return; if(GEO.pos) osmLayer(box,GEO.pos.lat,GEO.pos.lon); }
-function locate(){ const dot=document.querySelector('.screen.on #meDot'); if(!dot) return; const box=dot.parentNode, img=box.querySelector('.mapsvg');
+function locate(opt){ const dot=document.querySelector('.screen.on #meDot'); if(!dot) return; const box=dot.parentNode; const wantMe=!!(opt&&opt.me);
+  const sel=store.get('town',null), onAuth=!!document.querySelector('.screen.on#townAuth'), selPos=(onAuth&&sel&&sel.lat&&sel.lon)?{lat:sel.lat,lon:sel.lon}:null;
+  const render=()=>{ const me=GEO.pos||null, center=(selPos&&!wantMe)?selPos:(me||DEF_POS); mapView(box,center,me,selPos); };
   const show=()=>{ dot.classList.add('on'); if(!reduce) dot.querySelector('svg').animate([{transform:'scale(0)'},{transform:'scale(1.3)',offset:.6},{transform:'scale(1)'}],{duration:420,easing:'ease-out'}); buzz(10); };
-  A.located=true;
-  const sel=store.get('town',null), onAuth=!!document.querySelector('.screen.on#townAuth');
-  if(onAuth&&sel&&sel.lat&&sel.lon){ osmLayer(box,sel.lat,sel.lon); setTimeout(show,250); return; }
-  const fallback=()=>{ if(img) img.style.transform='translate(-8px,10px)'; setTimeout(show,350); };
-  if(!navigator.geolocation){ fallback(); return; }
-  navigator.geolocation.getCurrentPosition(p=>{ GEO.pos={lat:p.coords.latitude,lon:p.coords.longitude}; osmLayer(box,GEO.pos.lat,GEO.pos.lon); setTimeout(show,250);
-      if(!GEO.town&&!GEO._ask){ GEO._ask=1; geoTown(GEO.pos.lat,GEO.pos.lon).then(t=>{ GEO.town=t;  }).catch(()=>{}); } },
-    ()=>fallback(),{enableHighAccuracy:true,timeout:8000,maximumAge:30000}); }
+  A.located=true; render();
+  if(!navigator.geolocation){ if(wantMe) toast('위치를 사용할 수 없어요'); return; }
+  navigator.geolocation.getCurrentPosition(p=>{ GEO.pos={lat:p.coords.latitude,lon:p.coords.longitude}; render(); setTimeout(show,250);
+      if(!GEO.town&&!GEO._ask){ GEO._ask=1; geoTown(GEO.pos.lat,GEO.pos.lon).then(t=>{ GEO.town=t; }).catch(()=>{}); } },
+    ()=>{ if(wantMe) toast('위치 권한을 허용해 주세요'); },{enableHighAccuracy:true,timeout:8000,maximumAge:wantMe?0:30000}); }
+ACT.locateMe=()=>{ if(!store.get('locAsked',false)){ locAlert(); const w=setInterval(()=>{ if(store.get('locAsked',false)){ clearInterval(w); locate({me:true}); } },300); return; } locate({me:true}); };
 function addrSearch(q){ return fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&countrycodes=kr&accept-language=ko&q='+encodeURIComponent(q)).then(r=>r.json()).then(a=>a.map(o=>{ const d=o.address||{}; const dong=d.suburb||d.quarter||d.neighbourhood||d.village||d.town||d.city_district||d.city||d.county; if(!dong) return null; const full=[d.state||d.province,d.city||d.county,d.city_district,dong].filter((v,i,ar)=>v&&ar.indexOf(v)===i).join(' '); return [dong,full,(+o.lat).toFixed(5),(+o.lon).toFixed(5)]; }).filter(Boolean)); }
 function nearList(){ const base=NEAR.map(i=>TOWNS[i]); if(!GEO.town) return base; const t=[GEO.town.dong,GEO.town.full]; return [t].concat(base.filter(x=>x[0]!==t[0])); }
 ACT.locateTown=b=>{ const go1=()=>{ const btn=document.querySelector('.screen.on .locbtn'); if(btn) btn.classList.add('busy'); locate();
@@ -759,6 +766,7 @@ function renderTown(){ const s=document.getElementById('town');
     cap.textContent=r.length?`검색 결과 ${r.length}개`:'검색 결과'; list.innerHTML=townRows(r,q);
     clearTimeout(inp._t); const my=++inp._n||(inp._n=1); inp._t=setTimeout(()=>{ addrSearch(q).then(res=>{ if(inp.value.trim().replace(/\s+/g,' ')!==q) return; const seen=new Set(r.map(x=>x[1])); const add=res.filter(x=>!seen.has(x[1])); const all=r.concat(add); cap.textContent=all.length?`검색 결과 ${all.length}개`:'검색 결과'; list.innerHTML=townRows(all,q); }).catch(()=>{}); },380); });
   inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const f=list.querySelector('.townrow'); if(f) f.click(); } });
+  requestAnimationFrame(()=>{ const bx=s.querySelector('.locmap'); if(bx&&bx.clientWidth) mapView(bx,GEO.pos||DEF_POS,null,null); });
   setTimeout(()=>ACT.locate(),500); }
 ACT.townClr=()=>{ const inp=document.getElementById('townQ'); inp.value=''; inp.dispatchEvent(new Event('input')); inp.focus(); };
 ACT.townPick=b=>{ if(b.classList.contains('on')) return; const t=+b.dataset.i>=0?TOWNS[+b.dataset.i]:[b.dataset.d,b.dataset.f]; store.set('town',{dong:t[0],full:t[1],lat:+b.dataset.lat||null,lon:+b.dataset.lon||null});
@@ -766,7 +774,7 @@ ACT.townPick=b=>{ if(b.classList.contains('on')) return; const t=+b.dataset.i>=0
   const a=document.activeElement; if(a&&a.blur) a.blur(); setTimeout(()=>go('townAuth'),260); };
 ACT.townNext=()=>go('townAuth');
 function renderTownAuth(){ const s=document.getElementById('townAuth');
-  s.innerHTML=topbar('동네 설정')+steps(2)+`<div class="ahead"><h2>어느 동네에서<br>놀아볼까요?</h2><p>현재 위치를 확인하고 활동할 동네를 선택해주세요.</p></div><div style="padding:24px 24px 16px;display:flex;flex-direction:column;gap:16px"><div class="card" style="box-shadow:none;display:flex;align-items:center;justify-content:space-between;padding:8px 9px 8px 12px"><span class="row t-head" style="gap:4px">${I('location_on')}${TN()}</span><button class="btn" data-act="townChange" style="width:auto;height:36px;padding:0 16px;font-size:14px;background:#1A1A1A;color:#FDFDFD;border-radius:8px">변경</button></div>${locMap(330)}</div><div class="afoot"><button class="btn primary" data-act="townAuth">동네인증 완료하기</button></div>`;
+  s.innerHTML=topbar('동네 설정')+steps(2)+`<div class="ahead"><h2>어느 동네에서<br>놀아볼까요?</h2><p>현재 위치를 확인하고 활동할 동네를 선택해주세요.</p></div><div style="padding:24px 24px 16px;display:flex;flex-direction:column;gap:16px"><div class="card" style="box-shadow:none;display:flex;align-items:center;justify-content:space-between;padding:8px 9px 8px 12px"><span class="row t-head" style="gap:4px">${I('location_on')}${TN()}</span><button class="btn" data-act="townChange" style="width:auto;height:36px;padding:0 16px;font-size:14px;background:#1A1A1A;color:#FDFDFD;border-radius:8px">변경</button></div>${locMap(330,'locateMe')}</div><div class="afoot"><button class="btn primary" data-act="townAuth">동네인증 완료하기</button></div>`;
   const tw=store.get('town',null); if(tw&&!tw.lat){ addrSearch(tw.full||tw.dong).then(r=>{ if(r[0]){ store.set('town',Object.assign({},tw,{lat:+r[0][2],lon:+r[0][3]})); if(location.hash==='#townAuth') locate(); } }).catch(()=>{}); }
   setTimeout(locate,300); }
 ACT.townChange=()=>goBack();

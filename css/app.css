@@ -720,3 +720,8 @@ html.ios-standalone{min-height:min(100lvh,calc(100% + env(safe-area-inset-top,0p
 @media (prefers-reduced-motion:reduce){.wwarn::after,.wdisc::after{animation:none!important}.wv>*,.wenter,.wradar,.rdot,.wmsg span,.wball,.wface,.wtoast{animation:none!important}}
 
 .locbtn.busy .ms{animation:wsp .8s linear infinite}
+
+.locmap .me-dot{z-index:2}
+.sel-pin{position:absolute;width:40px;height:40px;margin:-38px 0 0 -20px;z-index:3;display:flex;align-items:flex-start;justify-content:center;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+.sel-pin .ms{font-size:40px;color:#4B50D9;font-variation-settings:'FILL' 1}
+.locmap .locbtn{z-index:4}
