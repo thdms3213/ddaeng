@@ -140,6 +140,8 @@ body.m .guide{display:none}
 .clr .qi img{display:block;width:100%;height:100%}
 .clr .qt{display:none}
 @keyframes clrqr{from{opacity:0;transform:translateY(10px) scale(.85)}}
+.skipbtn{position:absolute;right:14px;bottom:12px;z-index:6;height:26px;padding:0 10px;border-radius:13px;border:1.5px solid rgba(253,253,253,.55);background:rgba(11,11,16,.55);color:#FDFDFD;font-family:"Press Start 2P",monospace;font-size:9px;letter-spacing:.04em;cursor:pointer;opacity:.75;transition:opacity .15s,background .15s}
+.skipbtn:hover{opacity:1;background:rgba(11,11,16,.8)}
 </style>
 </helmet>
 <div style="height: 100vh; min-height: 520px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: 'Pretendard', system-ui, sans-serif; color: #1A1A1A; word-break: keep-all; background-color: #F4FBE3; background-image: radial-gradient(#C5F656 1.6px, transparent 2px); background-size: 22px 22px">
@@ -224,7 +226,7 @@ body.m .guide{display:none}
 <div style="position: absolute; inset: 0; background: #1E1B24; color: #FDFDFD; animation: fade .3s both">
 <canvas ref="{{setCanvas}}" tabIndex="0" aria-label="업무 부수기 게임. 십자키나 마우스로 받침대를 움직이고 A로 발사해요." onPointerMove="{{aim}}" onClick="{{launch}}" onKeyDown="{{key}}" style="position: absolute; left: 0; top: 0; width: 760px; height: 428px; display: block; cursor: none; outline: none; touch-action: none"></canvas>
 <div style="position: absolute; left: 0; right: 0; top: 0; height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; color: #FDFDFD; pointer-events: none" class="px"><span class="lf"><sc-for list="{{lifeDots}}" as="ld" hint-placeholder-count="3"><i class="{{ld.on}}"></i></sc-for></span><span style="font-size: 18px">{{pts}}</span><span style="font-size: 8px; color: #8A8794">B · HOME</span></div>
-<sc-if value="{{isReady}}" hint-placeholder-val="{{true}}"><p class="blink" style="position: absolute; left: 0; right: 0; top: 262px; margin: 0; text-align: center; font-size: 20px; font-weight: 800; color: #C5F656; pointer-events: none">화면을 클릭해 주세요!</p></sc-if>
+<sc-if value="{{canSkip}}" hint-placeholder-val="{{true}}"><button class="skipbtn" onClick="{{skip}}" onPointerDown="{{stop}}" aria-label="건너뛰고 클리어 화면 보기">SKIP ▶▶</button></sc-if><sc-if value="{{isReady}}" hint-placeholder-val="{{true}}"><p class="blink" style="position: absolute; left: 0; right: 0; top: 262px; margin: 0; text-align: center; font-size: 20px; font-weight: 800; color: #C5F656; pointer-events: none">화면을 클릭해 주세요!</p></sc-if>
 <sc-if value="{{isOver}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: rgba(11,11,16,.82); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #FDFDFD"><p class="px" style="margin: 0; font-size: 26px; color: #FF8FE0">GAME OVER</p><p style="margin: 0; font-size: 17px; font-weight: 800">업무 {{score}}개를 부쉈어요</p><p class="blink" style="margin: 0; font-size: 15px; font-weight: 800; color: #C5F656">화면을 클릭하면 다시 시작 · B 홈</p></div></sc-if>
 <sc-if value="{{isClear}}" hint-placeholder-val="{{false}}"><div class="clr" style="--u: 0.72" onClick="{{launch}}"><img class="bg" src="../game-assets/img/211ad2de8a1d6a97bf00319fa3c2709c.jpg" alt="파란 하늘과 초록 언덕, 멀리 도시가 보이는 길"><span class="ht"></span><div class="run"><img src="../game-assets/img/cc5759815a6da28c3ab34851fae3faf6.png" alt="땡땡이 캐릭터가 신나게 뛰어나와요"></div><div class="ttl"><p class="ey">STAGE CLEAR</p><p class="cpill"><span style="animation-delay: 2.30s">이</span><span style="animation-delay: 2.38s">제</span><span class="sp"></span><span style="animation-delay: 2.50s">땡</span><span style="animation-delay: 2.58s">땡</span><span style="animation-delay: 2.66s">이</span><span class="sp"></span><span style="animation-delay: 2.78s">G</span><span style="animation-delay: 2.86s">O</span><span style="animation-delay: 2.94s">!</span></p></div><div class="qr"><p class="qh">QR 찍고 접속!</p><div class="qi"><img src="../game-assets/img/qr-ddaeng.svg" alt="땡땡이 앱 접속 QR 코드"></div><p class="qt">놀 사람 찾으러<br>땡땡이 치러 가요</p></div><div class="again"><button class="ag1" onClick="{{againBtn}}">↻ 다시 하기</button><button class="ag2" onClick="{{toMenu}}">홈으로</button></div></div></sc-if>
 </div>
@@ -369,6 +371,7 @@ class Component extends DCLogic {
     this.parts=[]; this.floats=[]; this.trail=[]; this.hits=0; this.livesN=3; this.party=null; this.combo=0; ballImgs();
     this.ball={x:GW/2,y:0,r:14,vx:0,vy:0,stuck:true,sq:0};
   }
+  skipClear(){ if(this.state.status==='clear') return; this.hits=TOTAL; this.party=[]; for(var z=0;z<36;z++) this.party.push({x:Math.random()*GW,y:-40-Math.random()*400,r:18+Math.random()*26,vy:0,vx:(Math.random()-0.5)*3,img:Math.floor(Math.random()*24)}); this.setState({score:TOTAL,status:'clear'}); var me=this; [523,659,784,1047,784,1047].forEach(function(f,i){ me.beep(f,0.14,'square',0.5+i*0.13); }); }
   serve(){ var b=this.ball; if(!b.stuck) return; var dir=Math.random()<0.5?-1:1; b.vx=dir*(3+Math.random()*2); b.vy=-7.2; b.stuck=false; if(this.state.status!=='playing') this.setState({status:'playing'}); }
   restart(){ this.resetBoard(); this.setState({score:0,lives:3,status:'ready'}); if(this.cv) this.cv.focus(); }
   update(f){
@@ -474,6 +477,8 @@ class Component extends DCLogic {
       pts:('0000'+s.score*50).slice(-5), lifeDots:[0,1,2].map(function(i){ return {on:i<s.lives?'on':''}; }),
       isReady:s.status==='ready', isOver:s.status==='over', toMenu:function(e){ if(e&&e.stopPropagation) e.stopPropagation(); self.B(); },
       isClear:s.status==='clear',
+      canSkip:s.status!=='clear'&&s.status!=='over', stop:function(e){ if(e&&e.stopPropagation) e.stopPropagation(); },
+      skip:function(e){ if(e&&e.stopPropagation) e.stopPropagation(); if(e&&e.preventDefault) e.preventDefault(); self.skipClear(); },
       aim:function(e){ if(!self.pad) return; var r=e.currentTarget.getBoundingClientRect(); self.pad.tx=(e.clientX-r.left)/r.width*GW; },
       launch:function(){ var t=self.state.status; if(t==='ready') self.serve(); else if(t==='over'||t==='clear') self.restart(); },
       key:function(){}
